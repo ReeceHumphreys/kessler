@@ -1,12 +1,12 @@
 [package]
-name = "nsbm"
+name = "kesller"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "nsbm"
+name = "kessler"
 crate-type = ["cdylib"]
 
 [dependencies]
