@@ -3,12 +3,6 @@ name = "kessler"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[lib]
-name = "kessler"
-crate-type = ["cdylib"]
-
 [dependencies]
 blas-src = { version = "0.8", features = ["openblas"] }
 ndarray = { version = "0.14.0", features = ["blas", "rayon"] }
