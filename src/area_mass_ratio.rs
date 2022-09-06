@@ -4,75 +4,77 @@ use ndarray::prelude::*;
 use rand::distributions::Distribution;
 use rand_distr::Normal;
 
-/// Returns the area of a fragment [m].
+/// Returns a 1D Array containing the AM ratio of each fragment.
 ///
 /// # Arguments
-/// * `characteristic_len` - Then characteristic length. [m]
-pub fn am_ratio(sat_kind: &SatKind, characteristic_len: &Array1<f32>) -> Array1<f32> {
+/// * `characteristic_len` - A 1D Array containing the characteristic lengths [m] for each debris.
+/// * `sat_kind` - The type of satellite involved in the fragmentation event.
+pub fn am_ratios(sat_kind: &SatKind, characteristic_len: &Array1<f32>) -> Array1<f32> {
+    /// A method that returns the AM ratio [m] for a given debris
+    fn get_am_ratio(sat_kind: &SatKind, characteristic_len: f32) -> f32 {
+        let lambda_lc = characteristic_len.log10();
+        if lambda_lc > 0.11 {
+            // Bigger than 11 cm
+            // Means and Std Devs. for normal distributions
+            let mean_1 = mean_1(sat_kind, lambda_lc);
+            let mean_2 = mean_2(sat_kind, lambda_lc);
+            let std_dev_1 = sigma_1(sat_kind, lambda_lc);
+            let std_dev_2 = sigma_2(sat_kind, lambda_lc);
+
+            // Sample values from normal distributions
+            let mut rng = rand::thread_rng();
+
+            let normal_1 = Normal::new(mean_1, std_dev_1).unwrap();
+            let normal_2 = Normal::new(mean_2, std_dev_2).unwrap();
+
+            let n1 = normal_1.sample(&mut rng);
+            let n2 = normal_2.sample(&mut rng);
+
+            // Calculate AM Ratio
+            10_f32.powf(alpha(sat_kind, lambda_lc) * n1 + (1. - alpha(sat_kind, lambda_lc)) * n2)
+        } else if lambda_lc < 0.08 {
+            // Smaller than 8 cm
+
+            // Sample a random value from the normal distribution
+            let mean = mean_soc(lambda_lc);
+            let std_dev = sigma_soc(lambda_lc);
+            let normal = Normal::new(mean, std_dev).unwrap(); // TODO: Handle error
+            let mut rng = rand::thread_rng();
+            let y = normal.sample(&mut rng);
+
+            10_f32.powf(y)
+        } else {
+            // Case between 8 cm and 11 cm
+            // Means and Std Devs. for normal distributions
+            let mean_1 = mean_1(sat_kind, lambda_lc);
+            let mean_2 = mean_2(sat_kind, lambda_lc);
+            let std_dev_1 = sigma_1(sat_kind, lambda_lc);
+            let std_dev_2 = sigma_2(sat_kind, lambda_lc);
+
+            // Sample values from normal distributions
+            let mut rng = rand::thread_rng();
+
+            let normal_1 = Normal::new(mean_1, std_dev_1).unwrap();
+            let normal_2 = Normal::new(mean_2, std_dev_2).unwrap();
+
+            let n = Normal::new(mean_soc(lambda_lc), sigma_soc(lambda_lc))
+                .unwrap()
+                .sample(&mut rng);
+            let n1 = normal_1.sample(&mut rng);
+            let n2 = normal_2.sample(&mut rng);
+
+            let y0 = 10_f32.powf(n);
+            let y1 = 10_f32.powf(alpha(sat_kind, lambda_lc) * n1 + (1.0 - alpha(sat_kind, lambda_lc)) * n2);
+
+            y0 + (characteristic_len - 0.08) * (y1 - y0) / (0.03)
+        }
+    }
+
     let mut result: Array1<f32> = characteristic_len.clone();
     result.par_map_inplace(|x| {
         *x = get_am_ratio(sat_kind, *x);
     });
     result
-}
-
-fn get_am_ratio(sat_kind: &SatKind, characteristic_len: f32) -> f32 {
-    let lambda_lc = characteristic_len.log10();
-    if lambda_lc > 0.11 {
-        // Bigger than 11 cm
-        // Means and Std Devs. for normal distributions
-        let mean_1 = mean_1(sat_kind, lambda_lc);
-        let mean_2 = mean_2(sat_kind, lambda_lc);
-        let std_dev_1 = sigma_1(sat_kind, lambda_lc);
-        let std_dev_2 = sigma_2(sat_kind, lambda_lc);
-
-        // Sample values from normal distributions
-        let mut rng = rand::thread_rng();
-
-        let normal_1 = Normal::new(mean_1, std_dev_1).unwrap();
-        let normal_2 = Normal::new(mean_2, std_dev_2).unwrap();
-
-        let n1 = normal_1.sample(&mut rng);
-        let n2 = normal_2.sample(&mut rng);
-
-        // Calculate AM Ratio
-        10_f32.powf(alpha(sat_kind, lambda_lc) * n1 + (1. - alpha(sat_kind, lambda_lc)) * n2)
-    } else if lambda_lc < 0.08 {
-        // Smaller than 8 cm
-
-        // Sample a random value from the normal distribution
-        let mean = mean_soc(lambda_lc);
-        let std_dev = sigma_soc(lambda_lc);
-        let normal = Normal::new(mean, std_dev).unwrap(); // TODO: Handle error
-        let mut rng = rand::thread_rng();
-        let y = normal.sample(&mut rng);
-
-        10_f32.powf(y)
-    } else {
-        // Case between 8 cm and 11 cm
-        // Means and Std Devs. for normal distributions
-        let mean_1 = mean_1(sat_kind, lambda_lc);
-        let mean_2 = mean_2(sat_kind, lambda_lc);
-        let std_dev_1 = sigma_1(sat_kind, lambda_lc);
-        let std_dev_2 = sigma_2(sat_kind, lambda_lc);
-
-        // Sample values from normal distributions
-        let mut rng = rand::thread_rng();
-
-        let normal_1 = Normal::new(mean_1, std_dev_1).unwrap();
-        let normal_2 = Normal::new(mean_2, std_dev_2).unwrap();
-
-        let n = Normal::new(mean_soc(lambda_lc), sigma_soc(lambda_lc))
-            .unwrap()
-            .sample(&mut rng);
-        let n1 = normal_1.sample(&mut rng);
-        let n2 = normal_2.sample(&mut rng);
-
-        let y0 = 10_f32.powf(n);
-        let y1 = 10_f32.powf(alpha(sat_kind, lambda_lc) * n1 + (1.0 - alpha(sat_kind, lambda_lc)) * n2);
-
-        y0 + (characteristic_len - 0.08) * (y1 - y0) / (0.03)
-    }
 }
 
 // ------------------ Helpers ------------------
@@ -99,7 +101,7 @@ where
 // ------------------ Means and Std. Devs ------------------
 fn alpha(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
     match sat_kind {
-        SatKind::RB => distribution_constant(lambda_lc, -1.4, 0.0, 1.0, 0.5, |lambda_lc| {
+        SatKind::Rb => distribution_constant(lambda_lc, -1.4, 0.0, 1.0, 0.5, |lambda_lc| {
             1.0 - 0.3571 * (lambda_lc + 1.4)
         }),
         _ => distribution_constant(lambda_lc, -1.95, 0.55, 0.0, 1.0, |lambda_lc| {
@@ -111,7 +113,7 @@ fn alpha(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
 // Handles RB and SC case
 fn mean_1(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
     match sat_kind {
-        SatKind::RB => distribution_constant(lambda_lc, -0.5, 0.0, -0.45, -0.9, |lambda_lc| {
+        SatKind::Rb => distribution_constant(lambda_lc, -0.5, 0.0, -0.45, -0.9, |lambda_lc| {
             -0.45 - 0.9 * (lambda_lc + 0.5)
         }),
         _ => distribution_constant(lambda_lc, -1.1, 0.0, -0.6, -0.95, |lambda_lc| {
@@ -123,7 +125,7 @@ fn mean_1(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
 // Handles RB and SC case
 fn sigma_1(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
     match sat_kind {
-        SatKind::RB => 0.55,
+        SatKind::Rb => 0.55,
         _ => distribution_constant(lambda_lc, -1.3, -0.3, 0.1, 0.3, |lambda_lc| {
             0.1 + 0.2 * (lambda_lc + 1.3)
         }),
@@ -133,7 +135,7 @@ fn sigma_1(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
 // Handles RB and SC case
 fn mean_2(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
     match sat_kind {
-        SatKind::RB => -0.9,
+        SatKind::Rb => -0.9,
         _ => distribution_constant(lambda_lc, -0.7, -0.1, -1.2, -2.0, |lambda_lc| {
             -1.2 - 1.333 * (lambda_lc + 0.7)
         }),
@@ -143,7 +145,7 @@ fn mean_2(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
 // Handles RB and SC case
 fn sigma_2(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
     match sat_kind {
-        SatKind::RB => distribution_constant(lambda_lc, -0.5, -0.3, 0.5, 0.3, |lambda_lc| 0.5 - (lambda_lc + 0.5)),
+        SatKind::Rb => distribution_constant(lambda_lc, -0.5, -0.3, 0.5, 0.3, |lambda_lc| 0.5 - (lambda_lc + 0.5)),
         _ => distribution_constant(lambda_lc, -0.5, -0.3, 0.5, 0.3, |lambda_lc| 0.5 - (lambda_lc + 0.5)),
     }
 }

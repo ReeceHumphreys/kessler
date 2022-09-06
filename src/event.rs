@@ -13,6 +13,7 @@ pub trait FragmentationEvent {
     fn delta_velocity_offset(&self) -> [f32; 2];
 }
 
+#[derive(Debug)]
 pub struct CollisionEvent {
     pub max_characteristic_length: f32,
     pub sat_kind: SatKind,
@@ -26,8 +27,8 @@ impl CollisionEvent {
         let mut satellite_2 = satellites[1].clone();
         let max_characteristic_length = satellite_1.characteristic_length.max(satellite_2.characteristic_length);
         let mut sat_kind = SatKind::Soc;
-        if satellite_1.sat_kind == SatKind::RB || satellite_2.sat_kind == SatKind::RB {
-            sat_kind = SatKind::RB;
+        if satellite_1.sat_kind == SatKind::Rb || satellite_2.sat_kind == SatKind::Rb {
+            sat_kind = SatKind::Rb;
         }
 
         let input_mass = satellite_1.mass + satellite_2.mass;

@@ -2,9 +2,9 @@ mod area_mass_ratio;
 mod event;
 mod satellite;
 
-use area_mass_ratio::am_ratio;
+use area_mass_ratio::am_ratios;
 pub use event::{CollisionEvent, ExplosionEvent, FragmentationEvent};
-pub use satellite::Satellite;
+pub use satellite::{SatKind, Satellite};
 
 use ndarray::{s, Array, Array1, Array2, Array3};
 use rand::distributions::{Distribution, Uniform};
@@ -29,7 +29,7 @@ pub fn run(event: &impl FragmentationEvent) -> Array3<f32> {
     result.slice_mut(s![.., 2, 0]).assign(&char_lens);
 
     // Computing A/M Ratio for each debris
-    let am_ratios = am_ratio(event.kind(), &char_lens);
+    let am_ratios = am_ratios(event.kind(), &char_lens);
     result.slice_mut(s![.., 3, 0]).assign(&am_ratios);
 
     // Computing area for each debris

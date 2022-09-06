@@ -11,17 +11,17 @@ pub struct Satellite {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SatKind {
-    RB = 0,
+    Rb = 0,
     Soc = 1,
-    SC = 2,
+    Sc = 2,
 }
 
 impl From<i32> for SatKind {
     fn from(i: i32) -> Self {
         match i {
-            0 => SatKind::RB,
+            0 => SatKind::Rb,
             1 => SatKind::Soc,
-            2 => SatKind::SC,
+            2 => SatKind::Sc,
             _ => panic!("Invalid SatKind"),
         }
     }
