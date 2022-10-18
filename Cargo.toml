@@ -11,3 +11,8 @@ ndarray-rand = "0.13.0"
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
 rand = "0.8.5"
 rand_distr = "0.4.3"
+
+[profile.release]
+strip = true # Strip symbols from the binary
+lto = true # Enable link-time optimizations
+codegen-units = 1 # Maximize size reduction optimizations
