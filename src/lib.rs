@@ -72,6 +72,8 @@ fn velocity(event: &dyn FragmentationEvent, am_ratios: &Array1<f32>) -> Array2<f
     let mean = delta_v_offset[0] * chi + delta_v_offset[1];
     let std_dev = 0.4;
 
+    u32::try_from(i32::max_value()).unwrap();
+
     let mut rng = rand::thread_rng();
     let vel_mag: Array1<f32> = mean.mapv_into(|m| Normal::new(m, std_dev).unwrap().sample(&mut rng));
     let mut velocities = Array2::zeros((vel_mag.len(), 3));
@@ -88,7 +90,7 @@ fn velocity(event: &dyn FragmentationEvent, am_ratios: &Array1<f32>) -> Array2<f
 
 fn power_law(x0: f32, x1: f32, n: f32, y: f32) -> f32 {
     let step = x1.powf(n + 1.) - x0.powf(n + 1.) * y + x0.powf(n + 1.);
-    step.powf((1. / (n + 1.)) as f32)
+    step.powf(1. / (n + 1.))
 }
 
 fn characteristic_length_dist(min_characteristic_len: f32, max_characteristic_len: f32, exponent: f32) -> f32 {
