@@ -2,6 +2,12 @@
 name = "kessler"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+authors = ["Reece Humphreys"]
+keywords = ["kessler", "space", "simulation", "fragmentation", "low earth orbit"]
+description = """
+Kessler is a library for simulating fragmentation events in low Earth orbit.
+"""
 
 [dependencies]
 blas-src = { version = "0.8", features = ["openblas"] }
