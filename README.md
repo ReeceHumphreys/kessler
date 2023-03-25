@@ -3,6 +3,15 @@
 Kessler is a Rust package that allows users to simulate fragmentation events
 in low earth orbit according to the NASA standard breakup model.
 
+**IMPORTANT**: Until this package reaches version 1.0, the API is subject to change and the accuracy of results cannot be guaranteed.
+
+- [Kessler.rs](#kesslerrs)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [TODO](#todo)
+
 ## Installation
 
 To use Kessler, you'll need to have Rust and Cargo installed on your system.
@@ -63,3 +72,9 @@ submit a pull request.
 
 Kessler is distributed under the terms of the MIT license. See the LICENSE file
 for details.
+
+## TODO
+
+- [ ] Add tests
+- [ ] Add documentation
+- [ ] Validate results
