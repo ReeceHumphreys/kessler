@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["Reece Humphreys"]
-keywords = ["kessler", "space", "simulation", "fragmentation", "low earth orbit"]
+keywords = ["kessler", "space", "simulation", "fragmentation"]
+readme = "README.md"
+repository = "https://github.com/reecehumphreys/kessler/"
 description = """
 Kessler is a library for simulating fragmentation events in low Earth orbit.
 """
