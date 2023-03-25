@@ -9,6 +9,24 @@ pub struct Satellite {
     pub sat_kind: SatKind,
 }
 
+impl Satellite {
+    pub fn new(
+        position: impl Into<[f32; 3]>,
+        velocity: impl Into<[f32; 3]>,
+        mass: f32,
+        characteristic_length: f32,
+        sat_kind: SatKind,
+    ) -> Self {
+        Self {
+            position: Array1::from(position.into().to_vec()),
+            velocity: Array1::from(velocity.into().to_vec()),
+            mass,
+            characteristic_length,
+            sat_kind,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SatKind {
     Rb = 0,
