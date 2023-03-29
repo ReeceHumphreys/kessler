@@ -11,7 +11,7 @@ use rand::distributions::{Distribution, Uniform};
 use rand_distr::{Normal, UnitSphere};
 
 pub fn run(event: &impl FragmentationEvent) -> Array3<f32> {
-    let characteristic_len_min = 0.01;
+    let characteristic_len_min = event.max_characteristic_length();
     let fragment_count = event.fragment_count(characteristic_len_min).floor() as usize;
     let location = event.location();
     let characteristic_len_max = event.max_characteristic_length();
