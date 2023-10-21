@@ -7,6 +7,7 @@ pub trait FragmentationEvent {
     fn fragment_count(&self, min_characteristic_len: f32) -> f32;
     // Where the fragmentation event occured
     fn location(&self) -> Array1<f32>;
+    fn min_characteristic_length(&self) -> f32;
     fn max_characteristic_length(&self) -> f32;
     fn power_law_exponent(&self) -> f32;
     fn kind(&self) -> &SatKind;
@@ -15,14 +16,15 @@ pub trait FragmentationEvent {
 
 #[derive(Debug)]
 pub struct CollisionEvent {
-    pub max_characteristic_length: f32,
+    pub min_characteristic_length: f32,
     pub sat_kind: SatKind,
     pub input_mass: f32,
     pub satellites: Array1<Satellite>,
+    pub max_characteristic_length: f32,
 }
 
 impl CollisionEvent {
-    pub fn new(satellites: &[Satellite]) -> CollisionEvent {
+    pub fn new(satellites: &[Satellite], min_characteristic_length: f32) -> CollisionEvent {
         let mut satellite_1 = satellites[0].clone();
         let mut satellite_2 = satellites[1].clone();
         let max_characteristic_length = satellite_1.characteristic_length.max(satellite_2.characteristic_length);
@@ -40,10 +42,11 @@ impl CollisionEvent {
         let satellites = array![satellite_1, satellite_2];
 
         CollisionEvent {
-            max_characteristic_length,
+            min_characteristic_length,
             sat_kind,
             input_mass,
             satellites,
+            max_characteristic_length
         }
     }
 
@@ -104,6 +107,10 @@ impl FragmentationEvent for CollisionEvent {
         self.satellites[0].position.to_owned()
     }
 
+    fn min_characteristic_length(&self) -> f32 {
+        self.min_characteristic_length
+    }
+
     fn max_characteristic_length(&self) -> f32 {
         self.max_characteristic_length
     }
@@ -123,23 +130,25 @@ impl FragmentationEvent for CollisionEvent {
 
 #[derive(Debug, Clone)]
 pub struct ExplosionEvent {
-    pub max_characteristic_length: f32,
+    pub min_characteristic_length: f32,
     pub sat_type: SatKind,
     pub input_mass: f32,
     pub satellites: Array1<Satellite>,
+    pub max_characteristic_length: f32,
 }
 
 impl ExplosionEvent {
-    pub fn new(satellite: Satellite) -> ExplosionEvent {
-        let max_characteristic_length = satellite.characteristic_length;
+    pub fn new(satellite: Satellite, min_characteristic_length: f32) -> ExplosionEvent {
         let input_mass = satellite.mass;
         let sat_type = satellite.sat_kind.clone();
+        let max_characteristic_length = satellite.characteristic_length;
 
         ExplosionEvent {
-            max_characteristic_length,
+            min_characteristic_length,
             input_mass,
             sat_type,
             satellites: array![satellite],
+            max_characteristic_length
         }
     }
 }
@@ -156,6 +165,10 @@ impl FragmentationEvent for ExplosionEvent {
 
     fn location(&self) -> Array1<f32> {
         self.satellites.get(0).unwrap().position.to_owned()
+    }
+
+    fn min_characteristic_length(&self) -> f32 {
+        self.min_characteristic_length
     }
 
     fn max_characteristic_length(&self) -> f32 {

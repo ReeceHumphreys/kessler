@@ -14,14 +14,13 @@ impl Satellite {
         position: impl Into<[f32; 3]>,
         velocity: impl Into<[f32; 3]>,
         mass: f32,
-        characteristic_length: f32,
         sat_kind: SatKind,
     ) -> Self {
         Self {
             position: Array1::from(position.into().to_vec()),
             velocity: Array1::from(velocity.into().to_vec()),
             mass,
-            characteristic_length,
+            characteristic_length: calculate_characteristic_length_from_mass(mass),
             sat_kind,
         }
     }
@@ -43,4 +42,13 @@ impl From<i32> for SatKind {
             _ => panic!("Invalid SatKind"),
         }
     }
+}
+
+const PI: f32 = std::f32::consts::PI;
+
+fn calculate_characteristic_length_from_mass(mass: f32) -> f32 {
+    const MUL_92_937_PI: f32 = 92.937 * PI;
+    const INV_2_26: f32 = 1.0 / 2.26;
+
+    ((6.0 * mass) / MUL_92_937_PI).powf(INV_2_26)
 }

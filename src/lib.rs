@@ -11,7 +11,7 @@ use rand::distributions::{Distribution, Uniform};
 use rand_distr::{Normal, UnitSphere};
 
 pub fn run(event: &impl FragmentationEvent) -> Array3<f32> {
-    let characteristic_len_min = event.max_characteristic_length();
+    let characteristic_len_min = event.min_characteristic_length();
     let fragment_count = event.fragment_count(characteristic_len_min).floor() as usize;
     let location = event.location();
     let characteristic_len_max = event.max_characteristic_length();
@@ -75,7 +75,16 @@ fn velocity(event: &dyn FragmentationEvent, am_ratios: &Array1<f32>) -> Array2<f
     u32::try_from(i32::max_value()).unwrap();
 
     let mut rng = rand::thread_rng();
-    let vel_mag: Array1<f32> = mean.mapv_into(|m| Normal::new(m, std_dev).unwrap().sample(&mut rng));
+
+    let vel_mag: Array1<f32> = mean.mapv_into(|m| {
+        let sample = 10.0f32.powf(Normal::new(m, std_dev).unwrap().sample(&mut rng));
+        if sample.is_nan() {
+            // TODO: Need to handle NaNs from powf
+            return 0.0;
+        }
+        sample
+    });
+
     let mut velocities = Array2::zeros((vel_mag.len(), 3));
     for (i, mut row) in velocities.axis_iter_mut(ndarray::Axis(0)).enumerate() {
         // Perform calculations and assign to `row`; this is a trivial example:
