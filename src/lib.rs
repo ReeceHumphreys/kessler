@@ -10,7 +10,24 @@ use ndarray::{s, Array, Array1, Array2, Array3};
 use rand::distributions::{Distribution, Uniform};
 use rand_distr::{Normal, UnitSphere};
 
+// Non-WebAssembly bindings
+#[cfg(not(target_arch = "wasm32"))]
 pub fn run(event: &impl FragmentationEvent) -> Array3<f32> {
+    run_core(event)
+}
+
+// WebAssembly bindings
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::{prelude::*, JsValue};
+
+#[cfg(target_arch = "wasm32")]
+pub fn run(event: &impl FragmentationEvent) -> Option<JsValue> {
+    let result = run_core(event);
+    // Convert the result to JsValue
+    serde_wasm_bindgen::to_value(&result).ok()
+}
+
+fn run_core(event: &impl FragmentationEvent) -> Array3<f32> {
     let characteristic_len_min = event.min_characteristic_length();
     let fragment_count = event.fragment_count(characteristic_len_min).floor() as usize;
     let location = event.location();

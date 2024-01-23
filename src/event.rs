@@ -2,6 +2,7 @@ use crate::satellite::{SatKind, Satellite};
 
 use ndarray::*;
 use ndarray_linalg::*;
+use wasm_bindgen::prelude::*;
 
 pub trait FragmentationEvent {
     fn fragment_count(&self, min_characteristic_len: f32) -> f32;
@@ -14,19 +15,22 @@ pub trait FragmentationEvent {
     fn delta_velocity_offset(&self) -> [f32; 2];
 }
 
+#[wasm_bindgen]
 #[derive(Debug)]
 pub struct CollisionEvent {
     pub min_characteristic_length: f32,
     pub sat_kind: SatKind,
     pub input_mass: f32,
-    pub satellites: Array1<Satellite>,
     pub max_characteristic_length: f32,
+    satellites: Vec<Satellite>,
 }
 
+#[wasm_bindgen]
 impl CollisionEvent {
-    pub fn new(satellites: &[Satellite], min_characteristic_length: f32) -> CollisionEvent {
-        let mut satellite_1 = satellites[0].clone();
-        let mut satellite_2 = satellites[1].clone();
+    #[wasm_bindgen(constructor)]
+    pub fn new(satellites: Vec<Satellite>, min_characteristic_length: f32) -> CollisionEvent {
+        let mut satellite_1 = satellites[0].to_owned();
+        let mut satellite_2 = satellites[1].to_owned();
         let max_characteristic_length = satellite_1.characteristic_length.max(satellite_2.characteristic_length);
         let mut sat_kind = SatKind::Soc;
         if satellite_1.sat_kind == SatKind::Rb || satellite_2.sat_kind == SatKind::Rb {
@@ -39,14 +43,14 @@ impl CollisionEvent {
         if satellite_2.characteristic_length > satellite_1.characteristic_length {
             std::mem::swap(&mut satellite_1, &mut satellite_2)
         }
-        let satellites = array![satellite_1, satellite_2];
+        let satellites = vec![satellite_1, satellite_2];
 
         CollisionEvent {
             min_characteristic_length,
             sat_kind,
             input_mass,
             satellites,
-            max_characteristic_length
+            max_characteristic_length,
         }
     }
 
@@ -90,7 +94,9 @@ impl FragmentationEvent for CollisionEvent {
         let satellite_2 = &self.satellites[1];
 
         // Determine impact velocity
-        let v_impact = (&satellite_1.velocity - &satellite_2.velocity).norm();
+        let v1 = satellite_1.get_velocity();
+        let v2 = satellite_2.get_velocity();
+        let v_impact = (Array1::from_vec(v1) - Array1::from_vec(v2)).norm();
 
         // Target is the larger satellite
         let m_targ = satellite_1.mass;
@@ -104,7 +110,8 @@ impl FragmentationEvent for CollisionEvent {
     }
 
     fn location(&self) -> Array1<f32> {
-        self.satellites[0].position.to_owned()
+        let position = self.satellites[0].get_position();
+        Array1::from_vec(position)
     }
 
     fn min_characteristic_length(&self) -> f32 {
@@ -128,16 +135,19 @@ impl FragmentationEvent for CollisionEvent {
     }
 }
 
+#[wasm_bindgen]
 #[derive(Debug, Clone)]
 pub struct ExplosionEvent {
     pub min_characteristic_length: f32,
     pub sat_type: SatKind,
     pub input_mass: f32,
-    pub satellites: Array1<Satellite>,
     pub max_characteristic_length: f32,
+    satellites: Vec<Satellite>,
 }
 
+#[wasm_bindgen]
 impl ExplosionEvent {
+    #[wasm_bindgen(constructor)]
     pub fn new(satellite: Satellite, min_characteristic_length: f32) -> ExplosionEvent {
         let input_mass = satellite.mass;
         let sat_type = satellite.sat_kind.clone();
@@ -147,8 +157,8 @@ impl ExplosionEvent {
             min_characteristic_length,
             input_mass,
             sat_type,
-            satellites: array![satellite],
-            max_characteristic_length
+            satellites: vec![satellite],
+            max_characteristic_length,
         }
     }
 }
@@ -164,7 +174,8 @@ impl FragmentationEvent for ExplosionEvent {
     }
 
     fn location(&self) -> Array1<f32> {
-        self.satellites.get(0).unwrap().position.to_owned()
+        let position = self.satellites.get(0).unwrap().get_position();
+        Array1::from_vec(position)
     }
 
     fn min_characteristic_length(&self) -> f32 {

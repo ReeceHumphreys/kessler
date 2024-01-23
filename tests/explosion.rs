@@ -3,10 +3,9 @@ use kessler::{run, ExplosionEvent, SatKind, Satellite};
 
 #[test]
 fn explosion_nimbus() {
-
     // Define the initial position, velocity, mass, characteristic length, and kind of a satellite.
-    let position = [0.0, 0.0, 0.0]; // position vector [m] relative to Earth's center
-    let velocity = [0.0, 0.0, 0.0]; // velocity vector [m/s]
+    let position = vec![0.0, 0.0, 0.0]; // position vector [m] relative to Earth's center
+    let velocity = vec![0.0, 0.0, 0.0]; // velocity vector [m/s]
     let mass = 849.0; // kg
     let characteristic_length = 0.1; // m
     let sat_kind = SatKind::Rb; // kind of satellite (Rb, Debris, or Satellite)

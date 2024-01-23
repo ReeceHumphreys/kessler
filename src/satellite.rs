@@ -1,32 +1,48 @@
 use ndarray::prelude::*;
+use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen]
 #[derive(Debug, Clone)]
 pub struct Satellite {
-    pub position: Array1<f32>,
-    pub velocity: Array1<f32>,
     pub mass: f32,
     pub characteristic_length: f32,
     pub sat_kind: SatKind,
+    position: Array1<f32>,
+    velocity: Array1<f32>,
 }
 
+#[wasm_bindgen]
 impl Satellite {
-    pub fn new(
-        position: impl Into<[f32; 3]>,
-        velocity: impl Into<[f32; 3]>,
-        mass: f32,
-        sat_kind: SatKind,
-    ) -> Self {
+    #[wasm_bindgen(constructor)]
+    pub fn new(position: Vec<f32>, velocity: Vec<f32>, mass: f32, sat_kind: SatKind) -> Self {
         Self {
-            position: Array1::from(position.into().to_vec()),
-            velocity: Array1::from(velocity.into().to_vec()),
+            position: Array1::from_vec(position),
+            velocity: Array1::from_vec(velocity),
             mass,
             characteristic_length: calculate_characteristic_length_from_mass(mass),
             sat_kind,
         }
     }
+
+    pub fn set_position(&mut self, position: &[f32]) {
+        self.position = Array1::from_vec(position.to_vec());
+    }
+
+    pub fn set_velocity(&mut self, velocity: &[f32]) {
+        self.velocity = Array1::from_vec(velocity.to_vec());
+    }
+
+    pub fn get_position(&self) -> Vec<f32> {
+        self.position.to_vec()
+    }
+
+    pub fn get_velocity(&self) -> Vec<f32> {
+        self.velocity.to_vec()
+    }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SatKind {
     Rb = 0,
     Soc = 1,
