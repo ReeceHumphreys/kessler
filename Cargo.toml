@@ -12,17 +12,22 @@ Kessler is a library for simulating fragmentation events in low Earth orbit.
 """
 
 [dependencies]
-blas-src = { version = "0.8", features = ["openblas"] }
-js-sys = "0.3.67"
-ndarray = { version = "=0.15.6", features = ["blas", "rayon", "serde"] }
-ndarray-linalg = "0.14"
+ndarray = { version = "0.15.6", features = ["rayon", "serde"] }
 ndarray-rand = "0.13.0"
-openblas-src = { version = "0.10", features = ["cblas", "system"] }
 rand = "0.8.5"
 rand_distr = "0.4.3"
 serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.4"
 wasm-bindgen = { version = "0.2.90", features = ["serde"]}
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+blas-src = { version = "0.8", features = ["openblas"] }
+ndarray-linalg = "0.14"
+openblas-src = { version = "0.10", features = ["cblas", "system"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3.67"
+getrandom = { version = "0.2", features = ["js"] }
 
 [lib]
 crate-type = ["cdylib", "rlib"]

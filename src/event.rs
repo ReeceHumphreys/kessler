@@ -1,7 +1,6 @@
 use crate::satellite::{SatKind, Satellite};
 
 use ndarray::*;
-use ndarray_linalg::*;
 use wasm_bindgen::prelude::*;
 
 pub trait FragmentationEvent {
@@ -96,7 +95,7 @@ impl FragmentationEvent for CollisionEvent {
         // Determine impact velocity
         let v1 = satellite_1.get_velocity();
         let v2 = satellite_2.get_velocity();
-        let v_impact = (Array1::from_vec(v1) - Array1::from_vec(v2)).norm();
+        let v_impact = norm(Array1::from_vec(v1) - Array1::from_vec(v2));
 
         // Target is the larger satellite
         let m_targ = satellite_1.mass;
@@ -197,4 +196,9 @@ impl FragmentationEvent for ExplosionEvent {
     fn delta_velocity_offset(&self) -> [f32; 2] {
         [0.2, 1.85]
     }
+}
+
+// Calculate the l-2 norm of an array
+fn norm(arr: Array1<f32>) -> f32 {
+    arr.iter().map(|x| x.powi(2)).sum::<f32>().sqrt()
 }
