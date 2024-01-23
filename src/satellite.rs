@@ -1,6 +1,9 @@
 use ndarray::prelude::*;
 use wasm_bindgen::prelude::*;
 
+#[cfg(target_arch = "wasm32")]
+use js_sys::Float32Array;
+
 #[wasm_bindgen]
 #[derive(Debug, Clone)]
 pub struct Satellite {
@@ -13,11 +16,29 @@ pub struct Satellite {
 
 #[wasm_bindgen]
 impl Satellite {
-    #[wasm_bindgen(constructor)]
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(position: Vec<f32>, velocity: Vec<f32>, mass: f32, sat_kind: SatKind) -> Self {
         Self {
             position: Array1::from_vec(position),
             velocity: Array1::from_vec(velocity),
+            mass,
+            characteristic_length: calculate_characteristic_length_from_mass(mass),
+            sat_kind,
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(constructor)]
+    pub fn new(position: JsValue, velocity: JsValue, mass: f32, sat_kind: SatKind) -> Self {
+        let position_array: Float32Array = position.into();
+        let velocity_array: Float32Array = velocity.into();
+
+        assert_eq!(position_array.length(), 3, "Position array must have 3 elements.");
+        assert_eq!(velocity_array.length(), 3, "Velocity array must have 3 elements.");
+
+        Self {
+            position: Array1::from_vec(position_array.to_vec()),
+            velocity: Array1::from_vec(velocity_array.to_vec()),
             mass,
             characteristic_length: calculate_characteristic_length_from_mass(mass),
             sat_kind,
