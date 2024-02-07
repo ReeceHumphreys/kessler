@@ -20,7 +20,7 @@ pub fn run(event: &impl FragmentationEvent) -> Array3<f32> {
 }
 
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = runExplosion)]
 pub fn run_explosion(event: &ExplosionEvent) -> JsValue {
     let result = run_core(event);
     // Convert the result to JsValue
@@ -28,7 +28,7 @@ pub fn run_explosion(event: &ExplosionEvent) -> JsValue {
 }
 
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = runCollision)]
 pub fn run_collision(event: &CollisionEvent) -> JsValue {
     let result = run_core(event);
     // Convert the result to JsValue
