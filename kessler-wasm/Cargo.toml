@@ -1,6 +1,6 @@
 [package]
 name = "kessler-wasm"
-version = "0.2.0"
+version.workspace = true
 publish = false # Published to npm, not crates.io
 edition.workspace = true
 rust-version.workspace = true

@@ -5,7 +5,7 @@ name: kesspy-release
 on:
   push:
     tags:
-      - "kesspy-v*"
+      - "v*"
   workflow_dispatch:
 
 permissions:

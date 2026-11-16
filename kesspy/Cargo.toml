@@ -1,6 +1,6 @@
 [package]
 name = "kesspy"
-version = "0.3.0"
+version.workspace = true
 publish = false # Published to PyPI, not crates.io
 edition.workspace = true
 rust-version.workspace = true

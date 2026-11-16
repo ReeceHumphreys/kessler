@@ -1,6 +1,6 @@
 [package]
 name = "kessler"
-version = "0.2.0"
+version.workspace = true
 description = "Kessler is a library for simulating fragmentation events in low Earth orbit."
 keywords = ["kessler", "space", "simulation", "fragmentation"]
 categories = ["science", "simulation"]
@@ -22,6 +22,7 @@ rand = { workspace = true, features = ["std_rng"] }
 members = ["kesspy", "kessler-wasm"]
 
 [workspace.package]
+version = "0.3.0" # One version for every package, released with a single v* tag
 edition = "2024"
 rust-version = "1.87"
 license = "MIT"
