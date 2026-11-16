@@ -45,11 +45,19 @@ jobs:
       - run: .venv/bin/pytest kesspy/tests
 
   c:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      # Sanitizers catch leaks and memory errors at the boundary; LeakSanitizer only runs on Linux.
+      FLAGS: -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test -p kessler-c
       - run: cargo install cbindgen --locked --version 0.29.4
       - run: cbindgen --verify --config kessler-c/cbindgen.toml --output kessler-c/include/kessler.h kessler-c
-      - run: cmake -S kessler-c/example -B build && cmake --build build && ./build/example
+      - run: cmake -S kessler-c/example -B build -DCMAKE_C_FLAGS="$FLAGS" -DCMAKE_CXX_FLAGS="$FLAGS"
+      - run: cmake --build build
+      - run: ./build/example && ./build/example_c

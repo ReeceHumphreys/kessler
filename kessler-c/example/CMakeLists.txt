@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(kessler_example CXX)
+project(kessler_example C CXX)
 
 include(FetchContent)
 FetchContent_Declare(Corrosion GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git GIT_TAG v0.6.1)
@@ -12,3 +12,7 @@ target_include_directories(kessler_c INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../in
 add_executable(example main.cpp)
 target_compile_features(example PRIVATE cxx_std_17)
 target_link_libraries(example PRIVATE kessler_c)
+
+add_executable(example_c main.c)
+target_compile_features(example_c PRIVATE c_std_99)
+target_link_libraries(example_c PRIVATE kessler_c)
