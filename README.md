@@ -103,7 +103,7 @@ seeded runs. To regenerate them, run
 - R. Humphreys, *Orbital Debris Cloud Evolution: An Analysis of Fragmentation Events in Low Earth Orbit*, Honors
   thesis, Florida Atlantic University, 2021 (table 1): the mass, area and Δv rows of that comparison.
 
-The Python bindings live in [`kesspy/`](kesspy) and the WebAssembly bindings in [`kessler-wasm/`](kessler-wasm).
+The Python bindings live in [`kesspy/`](kesspy), the WebAssembly bindings in [`kessler-wasm/`](kessler-wasm) and the C/C++ bindings in [`kessler-c/`](kessler-c).
 
 ## Contributing
 

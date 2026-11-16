@@ -79,6 +79,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "kessler-c"
+version = "0.4.0"
+dependencies = [
+ "kessler",
+ "rand",
+]
+
+[[package]]
 name = "kessler-wasm"
 version = "0.4.0"
 dependencies = [

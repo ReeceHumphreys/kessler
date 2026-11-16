@@ -43,3 +43,13 @@ jobs:
       - run: uv venv --python ${{ matrix.python }}
       - run: uv pip install ./kesspy pytest
       - run: .venv/bin/pytest kesspy/tests
+
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p kessler-c
+      - run: cargo install cbindgen --locked --version 0.29.4
+      - run: cbindgen --verify --config kessler-c/cbindgen.toml --output kessler-c/include/kessler.h kessler-c
+      - run: cmake -S kessler-c/example -B build && cmake --build build && ./build/example

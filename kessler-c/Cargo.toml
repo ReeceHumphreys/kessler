@@ -1,0 +1,17 @@
+[package]
+name = "kessler-c"
+version.workspace = true
+publish = false # Built from source with CMake (Corrosion), not published
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "C bindings for Kessler, a library for simulating fragmentation events in low Earth orbit."
+repository.workspace = true
+
+[lib]
+name = "kessler_c"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[dependencies]
+kessler.workspace = true
+rand.workspace = true
