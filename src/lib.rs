@@ -10,6 +10,11 @@
 
 mod area_mass_ratio;
 
+// Runs the README's examples as doctests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
+
 use std::ops::RangeInclusive;
 
 use area_mass_ratio::am_ratio;

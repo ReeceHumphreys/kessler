@@ -38,17 +38,33 @@ use kessler::{collision, explosion, SatKind};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
-fn main() {
+fn main() -> Result<(), kessler::InputError> {
     let mut rng = StdRng::seed_from_u64(42);
 
     // An 839 kg rocket body exploding, modelling fragments down to 10 cm.
-    let debris = explosion(839.0, SatKind::RocketBody, 0.1, &mut rng);
+    let debris = explosion(839.0, SatKind::RocketBody, 0.1, &mut rng)?;
     println!("{} fragments, first has mass {} kg", debris.mass.len(), debris.mass[0]);
 
     // A 5 kg object hitting a 500 kg spacecraft at 9.5 km/s.
-    let debris = collision(500.0, SatKind::Spacecraft, 5.0, SatKind::Spacecraft, 9_500.0, 0.1, &mut rng);
+    let debris = collision(500.0, SatKind::Spacecraft, 5.0, SatKind::Spacecraft, 9_500.0, 0.1, &mut rng)?;
     println!("{} fragments", debris.mass.len());
+    Ok(())
 }
+```
+
+Inputs outside the model's range (a non-positive mass or speed, or a minimum size outside 1 mm to 1 m) return an
+`InputError`. Each event runs on one thread; to run many, give each thread its own generator:
+
+```rust
+# use kessler::{explosion, SatKind};
+# use rand::{rngs::StdRng, SeedableRng};
+let runs = std::thread::scope(|s| {
+    let handles: Vec<_> = (0..8)
+        .map(|seed| s.spawn(move || explosion(839.0, SatKind::RocketBody, 0.1, &mut StdRng::seed_from_u64(seed))))
+        .collect();
+    handles.into_iter().map(|h| h.join().unwrap()).collect::<Result<Vec<_>, _>>()
+});
+assert_eq!(runs.unwrap().len(), 8);
 ```
 
 `Fragments` holds one entry per fragment in each of `characteristic_length` [m], `am_ratio` [m²/kg], `area` [m²],
