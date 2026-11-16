@@ -8,7 +8,8 @@ use rand_distr::Normal;
 pub fn am_ratio(sat_kind: SatKind, characteristic_len: f32, rng: &mut impl Rng) -> f32 {
     let sat_kind = &sat_kind;
     let lambda_lc = characteristic_len.log10();
-    if lambda_lc > 0.11 {
+    // The size thresholds are on L_c itself [m]; lambda_lc only feeds the distribution parameters.
+    if characteristic_len > 0.11 {
         // Bigger than 11 cm
         // Means and Std Devs. for normal distributions
         let mean_1 = mean_1(sat_kind, lambda_lc);
@@ -25,7 +26,7 @@ pub fn am_ratio(sat_kind: SatKind, characteristic_len: f32, rng: &mut impl Rng) 
 
         // Calculate AM Ratio
         10_f32.powf(alpha(sat_kind, lambda_lc) * n1 + (1. - alpha(sat_kind, lambda_lc)) * n2)
-    } else if lambda_lc < 0.08 {
+    } else if characteristic_len < 0.08 {
         // Smaller than 8 cm
 
         // Sample a random value from the normal distribution
@@ -144,5 +145,32 @@ fn sigma_soc(lambda_lc: f32) -> f32 {
         0.2
     } else {
         0.2 + 0.1333 * (lambda_lc + 3.5)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
+
+    fn mean_log10_am(kind: SatKind, lc: f32) -> f32 {
+        let mut rng = StdRng::seed_from_u64(1);
+        (0..4000).map(|_| am_ratio(kind, lc, &mut rng).log10()).sum::<f32>() / 4000.0
+    }
+
+    #[test]
+    fn fragments_over_11cm_use_the_bimodal_distribution() {
+        // At L_c = 0.5 m a rocket body's log10(A/M) has mean alpha*mu1 + (1-alpha)*mu2.
+        let l = 0.5f32.log10();
+        let (kind, a) = (&SatKind::RocketBody, alpha(&SatKind::RocketBody, l));
+        let expected = a * mean_1(kind, l) + (1.0 - a) * mean_2(kind, l);
+        assert!((mean_log10_am(SatKind::RocketBody, 0.5) - expected).abs() < 0.05);
+    }
+
+    #[test]
+    fn fragments_under_8cm_use_the_small_object_distribution() {
+        let expected = mean_soc(0.01f32.log10());
+        assert!((mean_log10_am(SatKind::RocketBody, 0.01) - expected).abs() < 0.05);
     }
 }

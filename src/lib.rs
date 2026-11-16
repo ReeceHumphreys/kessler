@@ -142,6 +142,6 @@ fn delta_v(offset: [f32; 2], am_ratio: f32, rng: &mut impl Rng) -> [f32; 3] {
 
 /// Samples the power law between `x0` and `x1` with exponent `n`, given a uniform sample `y` in [0, 1].
 fn power_law(x0: f32, x1: f32, n: f32, y: f32) -> f32 {
-    let step = x1.powf(n + 1.) - x0.powf(n + 1.) * y + x0.powf(n + 1.);
+    let step = (x1.powf(n + 1.) - x0.powf(n + 1.)) * y + x0.powf(n + 1.);
     step.powf(1. / (n + 1.))
 }

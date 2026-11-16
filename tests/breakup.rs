@@ -44,3 +44,16 @@ fn collision_threshold_is_40_joules_per_gram() {
     assert_eq!(count(1_800.0), (0.1 * (5.0f32 * 1.8).powf(0.75) * 0.1f32.powf(-1.71)) as usize);
     assert_eq!(count(9_500.0), (0.1 * 505.0f32.powf(0.75) * 0.1f32.powf(-1.71)) as usize);
 }
+
+#[test]
+fn fragments_are_physical_across_seeds() {
+    for seed in 0..30 {
+        let mut rng = StdRng::seed_from_u64(seed);
+        let f = collision(500.0, SatKind::Spacecraft, 5.0, SatKind::Spacecraft, 9_500.0, 0.1, &mut rng);
+        for i in 0..f.mass.len() {
+            assert!(f.characteristic_length[i] >= 0.1, "seed {seed}: fragment {i} below the minimum length");
+            assert!(f.am_ratio[i].is_finite() && f.am_ratio[i] > 0.0, "seed {seed}: A/M {}", f.am_ratio[i]);
+            assert!(f.mass[i] > 0.0, "seed {seed}: mass {}", f.mass[i]);
+        }
+    }
+}
