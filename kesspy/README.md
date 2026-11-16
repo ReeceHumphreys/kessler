@@ -43,7 +43,7 @@ debris = explosion(839.0, SatKind.RocketBody, 0.1, seed=42)
 print(f"{len(debris.mass)} fragments, mean mass {np.mean(debris.mass)} kg")
 
 # A 5 kg object hitting a 500 kg spacecraft at 9.5 km/s.
-debris = collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Debris, 9_500.0, 0.1)
+debris = collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Spacecraft, 9_500.0, 0.1)
 ```
 
 Leave out `seed` for a different result each run.

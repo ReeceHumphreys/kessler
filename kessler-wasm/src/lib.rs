@@ -9,7 +9,6 @@ use wasm_bindgen::prelude::*;
 pub enum SatKind {
     RocketBody,
     Spacecraft,
-    Debris,
 }
 
 impl From<SatKind> for kessler::SatKind {
@@ -17,7 +16,6 @@ impl From<SatKind> for kessler::SatKind {
         match kind {
             SatKind::RocketBody => kessler::SatKind::RocketBody,
             SatKind::Spacecraft => kessler::SatKind::Spacecraft,
-            SatKind::Debris => kessler::SatKind::Debris,
         }
     }
 }

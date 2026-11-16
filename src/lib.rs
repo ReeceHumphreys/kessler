@@ -16,13 +16,12 @@ use area_mass_ratio::am_ratio;
 use rand::Rng;
 use rand_distr::{Distribution, Normal, UnitSphere};
 
-/// The kind of object breaking up. Rocket bodies use their own area-to-mass distribution; spacecraft and debris
-/// share the spacecraft one.
+/// The kind of object breaking up, which picks its area-to-mass distribution. Use `Spacecraft` for anything that
+/// isn't a rocket body, including debris.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SatKind {
     RocketBody,
     Spacecraft,
-    Debris,
 }
 
 /// The fragments produced by one event. Every `Vec` has one entry per fragment, in the same order. All values are SI.
@@ -89,7 +88,7 @@ pub fn collision(
     let kind = if kind_a == SatKind::RocketBody || kind_b == SatKind::RocketBody {
         SatKind::RocketBody
     } else {
-        SatKind::Debris
+        SatKind::Spacecraft
     };
 
     let max_characteristic_length = characteristic_length(m_targ).min(POWER_LAW_MAX);

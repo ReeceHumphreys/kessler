@@ -8,7 +8,6 @@ use rand::SeedableRng;
 pub enum PySatKind {
     RocketBody,
     Spacecraft,
-    Debris,
 }
 
 impl From<PySatKind> for kessler::SatKind {
@@ -16,7 +15,6 @@ impl From<PySatKind> for kessler::SatKind {
         match kind {
             PySatKind::RocketBody => kessler::SatKind::RocketBody,
             PySatKind::Spacecraft => kessler::SatKind::Spacecraft,
-            PySatKind::Debris => kessler::SatKind::Debris,
         }
     }
 }

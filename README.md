@@ -46,7 +46,7 @@ fn main() {
     println!("{} fragments, first has mass {} kg", debris.mass.len(), debris.mass[0]);
 
     // A 5 kg object hitting a 500 kg spacecraft at 9.5 km/s.
-    let debris = collision(500.0, SatKind::Spacecraft, 5.0, SatKind::Debris, 9_500.0, 0.1, &mut rng);
+    let debris = collision(500.0, SatKind::Spacecraft, 5.0, SatKind::Spacecraft, 9_500.0, 0.1, &mut rng);
     println!("{} fragments", debris.mass.len());
 }
 ```

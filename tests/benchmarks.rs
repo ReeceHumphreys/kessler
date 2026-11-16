@@ -88,7 +88,7 @@ fn print_readme_tables() {
 
     let explosion_stats = stats(&explosion_rows, |rng| explosion(1000.0, SatKind::RocketBody, 0.001, rng));
     let collision_stats = stats(&collision_rows, |rng| {
-        collision(1000.0, SatKind::RocketBody, 10.0, SatKind::Debris, 10_000.0, 0.001, rng)
+        collision(1000.0, SatKind::RocketBody, 10.0, SatKind::Spacecraft, 10_000.0, 0.001, rng)
     });
 
     let tables = format!(

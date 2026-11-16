@@ -12,5 +12,5 @@ print("Average mass [kg]:", np.mean(debris.mass))
 print("Average delta-v [m/s]:", np.mean(np.linalg.norm(debris.delta_v, axis=1)))
 
 # A 5 kg object hitting a 500 kg spacecraft at 9.5 km/s.
-debris = collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Debris, 9_500.0, 0.1)
+debris = collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Spacecraft, 9_500.0, 0.1)
 print("Collision fragments:", len(debris.mass), "delta_v shape:", debris.delta_v.shape)
