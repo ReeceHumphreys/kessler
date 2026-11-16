@@ -1,24 +1,16 @@
 import numpy as np
-from kesspy import Satellite, ExplosionEvent, run_explosion
+from kesspy import SatKind, collision, explosion
 
-pos = np.array([0.0, 0.0, 0.0], np.float32)
-vel = np.array([0.0, 0.0, 0.0], np.float32)
+# All inputs and outputs are SI: metres, kilograms, metres per second.
+debris = explosion(839.0, SatKind.RocketBody, 0.1, seed=42)
 
-sat = Satellite(pos, vel, 839.0)
-event = ExplosionEvent(sat, 0.1)
-debris = run_explosion(event)
+print("Fragments:", len(debris.mass))
+print("Average characteristic length [m]:", np.mean(debris.characteristic_length))
+print("Average A/M [m^2/kg]:", np.mean(debris.am_ratio))
+print("Average area [m^2]:", np.mean(debris.area))
+print("Average mass [kg]:", np.mean(debris.mass))
+print("Average delta-v [m/s]:", np.mean(np.linalg.norm(debris.delta_v, axis=1)))
 
-rs = debris[:, 1, :].astype(np.float64)  # km
-vs = debris[:, 6, :].astype(np.float64)  # km/s
-char_les = debris[:, 2, :].astype(np.float64)  # m
-ams = debris[:, 3, :].astype(np.float64)  # kg
-areas = debris[:, 4, :].astype(np.float64)  # m^2
-masses = debris[:, 5, :].astype(np.float64)  # kg
-
-print("Average Characteristic len.:", np.mean(char_les[:, 0]))
-print("Average A/M:", np.mean(ams[:, 0]))
-print("Average Area:", np.mean(areas[:, 0]))
-print("Average Mass:", np.mean(masses[:, 0]))
-
-vel_mags = np.linalg.norm(vs, axis=1)
-print("Average vel mag:", np.mean(vel_mags))
+# A 5 kg object hitting a 500 kg spacecraft at 9.5 km/s.
+debris = collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Debris, 9_500.0, 0.1)
+print("Collision fragments:", len(debris.mass), "delta_v shape:", debris.delta_v.shape)

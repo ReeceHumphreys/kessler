@@ -25,38 +25,37 @@ adding the following line to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-kessler = "0.1.0"
+kessler = "0.1.4"
 ```
 
 ## Usage
 
-To use Kessler, first import the library in your Rust code:
+The whole interface is two functions, `explosion` and `collision`. All inputs and outputs are SI (metres, kilograms,
+metres per second). Randomness comes from the generator you pass in, so a seeded one gives reproducible results.
 
 ```rust
-use kessler::{run, ExplosionEvent, SatKind, Satellite};
+use kessler::{collision, explosion, SatKind};
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 
 fn main() {
+    let mut rng = StdRng::seed_from_u64(42);
 
-    // Define the initial position, velocity, mass, characteristic length, and kind of a satellite.
-    let position = [6.702e6, 0.0, 0.0]; // position vector [m] relative to Earth's center
-    let velocity = [0.0, 7.666e3, 0.0]; // velocity vector [m/s]
-    let mass = 4.98e3; // kg
-    let characteristic_length = 0.1; // m
-    let sat_kind = SatKind::Rb; // kind of satellite (Rb, Debris, or Satellite)
+    // An 839 kg rocket body exploding, modelling fragments down to 10 cm.
+    let debris = explosion(839.0, SatKind::RocketBody, 0.1, &mut rng);
+    println!("{} fragments, first has mass {} kg", debris.mass.len(), debris.mass[0]);
 
-    // Create a new satellite with the given parameters
-    let satellite = Satellite::new(position, velocity, mass, characteristic_length, sat_kind);
-
-    // Create a new explosion event with the satellite
-    let event = ExplosionEvent::new(satellite);
-
-    // Run the simulation with the explosion event
-    let result = run(&event);
-
-    // Print the final state of the satellite after the simulation has completed
-    println!("{:#?}", result.dim());
+    // A 5 kg object hitting a 500 kg spacecraft at 9.5 km/s.
+    let debris = collision(500.0, SatKind::Spacecraft, 5.0, SatKind::Debris, 9_500.0, 0.1, &mut rng);
+    println!("{} fragments", debris.mass.len());
 }
 ```
+
+`Fragments` holds one entry per fragment in each of `characteristic_length` [m], `am_ratio` [m²/kg], `area` [m²],
+`mass` [kg] and `delta_v` [m/s, 3D]. Fragments start where the event happened; add `delta_v` to the parent's velocity
+to get each fragment's velocity.
+
+The Python bindings live in [`kesspy/`](kesspy) and the WebAssembly bindings in [`kessler-wasm/`](kessler-wasm).
 
 ## Contributing
 

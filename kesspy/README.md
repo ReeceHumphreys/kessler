@@ -32,51 +32,35 @@ KessPy requires the following packages:
 
 ## Getting Started
 
-To get started with KessPy, you can use the following example code to simulate an explosion event and generate debris:
+All inputs and outputs are SI (metres, kilograms, metres per second).
 
 ```python
 import numpy as np
-from kesspy import Satellite, ExplosionEvent, run_explosion
+from kesspy import SatKind, collision, explosion
 
-# Define the initial position, velocity, mass, characteristic length, and kind of a satellite.
-pos = np.array([6.702e6, 0.0, 0.0], np.float32) # position vector [m] relative to Earth's center
-vel = np.array([0.0, 7.666e3, 0.0], np.float32) # velocity vector [m/s]'
-mass = 4.98e3; # [kg]
-characteristic_length = 0.1; # [m]
+# An 839 kg rocket body exploding, modelling fragments down to 10 cm.
+debris = explosion(839.0, SatKind.RocketBody, 0.1, seed=42)
+print(f"{len(debris.mass)} fragments, mean mass {np.mean(debris.mass)} kg")
 
-# Create a new satellite with the given parameters
-sat = Satellite(pos, vel, mass, characteristic_length)
-
-# Create a new explosion event with the satellite
-event = ExplosionEvent(sat)
-
-# Run the simulation with the explosion event
-debris = run_explosion(event)
-
-# Print some statistics about the debris
-mean_area = np.mean(debris[:, 4, 0])
-mean_mass = np.mean(debris[:, 5, 0])
-
-print(f"{debris.shape[0]} Pieces of debris generated.")
-print(f"Mean mass: {mean_mass}")
-print(f"Mean area: {mean_area}")
+# A 5 kg object hitting a 500 kg spacecraft at 9.5 km/s.
+debris = collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Debris, 9_500.0, 0.1)
 ```
 
-In this example, we define the initial position, velocity, mass, characteristic length, and type of a satellite. We then create a new Satellite object with these parameters, and use it to create an ExplosionEvent. Finally, we run the simulation with the run_explosion function, which generates debris data that we can analyze.
+Leave out `seed` for a different result each run.
 
 ## Result Data Format
 
-| index | data                       | type                              |
-| ----- | -------------------------- | --------------------------------- |
-| 0     | SatType (for internal use) | enum                              |
-| 1     | position                   | np.array (, 3), containing floats |
-| 2     | characteristic length      | float                             |
-| 3     | area to mass ratio         | float                             |
-| 4     | area                       | float                             |
-| 5     | mass                       | float                             |
-| 6     | velocity                   | np.array (, 3), containing floats |
+Both functions return a `Fragments` object whose fields are numpy `float32` arrays with one row per fragment:
 
-> _The returned debris is an (n, 7, 3) numpy array. However, only the position and velocity use the third axis as those quanities are vectors._ >_All other fields have 3 copies of their respective data. This was done as a performance optimization for numpy_
+| field                   | unit  | shape  |
+| ----------------------- | ----- | ------ |
+| `characteristic_length` | m     | (n,)   |
+| `am_ratio`              | m²/kg | (n,)   |
+| `area`                  | m²    | (n,)   |
+| `mass`                  | kg    | (n,)   |
+| `delta_v`               | m/s   | (n, 3) |
+
+Fragments start where the event happened; add `delta_v` to the parent's velocity to get each fragment's velocity.
 
 ## Contributing
 

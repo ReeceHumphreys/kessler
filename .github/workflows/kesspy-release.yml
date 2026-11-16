@@ -59,20 +59,6 @@ jobs:
         with:
           python-version: "3.10"
           architecture: ${{ matrix.target }}
-      - name: Install deps.
-        run: |
-          choco install make
-      - name: Set up vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-
-      - name: Integrate vcpkg
-        run: .\vcpkg\vcpkg integrate install
-
-      # Dynamically select the correct vcpkg triplet based on the target architecture
-      - name: Install OpenBLAS
-        run: .\vcpkg\vcpkg install openblas:${{ matrix.target }}-windows
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:

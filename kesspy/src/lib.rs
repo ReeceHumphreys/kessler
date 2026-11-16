@@ -1,107 +1,106 @@
-use kessler::{run, CollisionEvent, ExplosionEvent, SatKind, Satellite};
-use numpy::{PyArray1, PyArray3, ToPyArray};
+use numpy::{PyArray1, PyArray2};
 use pyo3::prelude::*;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 
-// Wrappers for the structs provided by kessler
-#[pyclass(name = "CollisionEvent")]
-#[derive(Debug)]
-pub struct CollisionEventPyWrapper(CollisionEvent);
+#[pyclass(name = "SatKind")]
+#[derive(Clone, Copy)]
+pub enum PySatKind {
+    RocketBody,
+    Spacecraft,
+    Debris,
+}
 
-#[pymethods]
-impl CollisionEventPyWrapper {
-    #[new]
-    pub fn __new__(
-        _py: Python,
-        satellite_one: &SatellitePyWrapper,
-        satellite_two: &SatellitePyWrapper,
-        min_characteristic_length: f32,
-    ) -> Self {
-        let satellites = vec![satellite_one.0.to_owned(), satellite_two.0.to_owned()];
-        CollisionEventPyWrapper(CollisionEvent::new(satellites, min_characteristic_length))
+impl From<PySatKind> for kessler::SatKind {
+    fn from(kind: PySatKind) -> Self {
+        match kind {
+            PySatKind::RocketBody => kessler::SatKind::RocketBody,
+            PySatKind::Spacecraft => kessler::SatKind::Spacecraft,
+            PySatKind::Debris => kessler::SatKind::Debris,
+        }
     }
 }
 
-#[pyclass(name = "ExplosionEvent")]
-#[derive(Debug)]
-pub struct ExplosionEventPyWrapper(ExplosionEvent);
+/// The fragments from one event, as numpy arrays with one row per fragment. All values are SI.
+#[pyclass(name = "Fragments")]
+pub struct PyFragments {
+    #[pyo3(get)]
+    characteristic_length: Py<PyArray1<f32>>,
+    #[pyo3(get)]
+    am_ratio: Py<PyArray1<f32>>,
+    #[pyo3(get)]
+    area: Py<PyArray1<f32>>,
+    #[pyo3(get)]
+    mass: Py<PyArray1<f32>>,
+    /// [m/s], shape (n, 3).
+    #[pyo3(get)]
+    delta_v: Py<PyArray2<f32>>,
+}
 
-#[pymethods]
-impl ExplosionEventPyWrapper {
-    #[new]
-    pub fn __new__(_py: Python, satellite: &SatellitePyWrapper, min_characteristic_length: f32) -> Self {
-        let satellite = satellite.0.to_owned();
-        ExplosionEventPyWrapper(ExplosionEvent::new(satellite, min_characteristic_length))
+impl PyFragments {
+    fn new(py: Python, f: kessler::Fragments) -> PyResult<Self> {
+        let n = f.delta_v.len();
+        let delta_v = PyArray1::from_iter(py, f.delta_v.into_iter().flatten()).reshape([n, 3])?;
+        Ok(PyFragments {
+            characteristic_length: PyArray1::from_vec(py, f.characteristic_length).into(),
+            am_ratio: PyArray1::from_vec(py, f.am_ratio).into(),
+            area: PyArray1::from_vec(py, f.area).into(),
+            mass: PyArray1::from_vec(py, f.mass).into(),
+            delta_v: delta_v.into(),
+        })
     }
 }
 
-#[pyclass(name = "Satellite")]
-#[derive(Debug)]
-pub struct SatellitePyWrapper(Satellite);
+fn rng(seed: Option<u64>) -> StdRng {
+    seed.map_or_else(StdRng::from_entropy, StdRng::seed_from_u64)
+}
 
-#[pymethods]
-impl SatellitePyWrapper {
-    #[new]
-    pub fn __new__(
-        _py: Python,
-        position: &PyArray1<f32>,
-        velocity: &PyArray1<f32>,
-        mass: f32,
-    ) -> Self {
+/// Breaks up a single object. Inputs and outputs are SI (m, kg, m/s). Pass a `seed` for reproducible results.
+#[pyfunction]
+#[pyo3(signature = (mass, kind, min_characteristic_length, seed = None))]
+fn explosion(
+    py: Python,
+    mass: f32,
+    kind: PySatKind,
+    min_characteristic_length: f32,
+    seed: Option<u64>,
+) -> PyResult<PyFragments> {
+    PyFragments::new(py, kessler::explosion(mass, kind.into(), min_characteristic_length, &mut rng(seed)))
+}
 
-        let position: [f32; 3] = {
-            unsafe {
-                let position_slice = position.as_slice().expect("Failed to get slice from position array");
-                if position_slice.len() != 3 {
-                    panic!("Position array must have a length of 3");
-                }
-                let mut arr = [0.0; 3];
-                arr.copy_from_slice(position_slice);
-                arr
-            }
-        };
-
-        let velocity: [f32; 3] = {
-            unsafe {
-                let velocity_slice = velocity.as_slice().expect("Failed to get slice from velocity array");
-                if velocity_slice.len() != 3 {
-                    panic!("Velocity array must have a length of 3");
-                }
-                let mut arr = [0.0; 3];
-                arr.copy_from_slice(velocity_slice);
-                arr
-            }
-        };
-        SatellitePyWrapper(
-            Satellite::new(
-                position.to_vec(),
-                velocity.to_vec(),
-                mass,
-                SatKind::Rb //TODO
-            )
-        )
-    }
+/// Breaks up two objects colliding at `impact_speed`. Inputs and outputs are SI (m, kg, m/s). Pass a `seed` for
+/// reproducible results.
+#[pyfunction]
+#[pyo3(signature = (mass_a, kind_a, mass_b, kind_b, impact_speed, min_characteristic_length, seed = None))]
+#[allow(clippy::too_many_arguments)]
+fn collision(
+    py: Python,
+    mass_a: f32,
+    kind_a: PySatKind,
+    mass_b: f32,
+    kind_b: PySatKind,
+    impact_speed: f32,
+    min_characteristic_length: f32,
+    seed: Option<u64>,
+) -> PyResult<PyFragments> {
+    let f = kessler::collision(
+        mass_a,
+        kind_a.into(),
+        mass_b,
+        kind_b.into(),
+        impact_speed,
+        min_characteristic_length,
+        &mut rng(seed),
+    );
+    PyFragments::new(py, f)
 }
 
 // The name of the module must be the same as the rust package name
 #[pymodule]
 fn kesspy(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    #[pyfn(m)]
-    fn run_collision<'py>(py: Python<'py>, event: &CollisionEventPyWrapper) -> &'py PyArray3<f32> {
-        let event = &event.0;
-        let output = run(event);
-        output.to_pyarray(py)
-    }
-
-    #[pyfn(m)]
-    fn run_explosion<'py>(py: Python<'py>, event: &ExplosionEventPyWrapper) -> &'py PyArray3<f32> {
-        let event = &event.0;
-        let output = run(event);
-        output.to_pyarray(py)
-    }
-
-    m.add_class::<ExplosionEventPyWrapper>()?;
-    m.add_class::<CollisionEventPyWrapper>()?;
-    m.add_class::<SatellitePyWrapper>()?;
-
+    m.add_class::<PySatKind>()?;
+    m.add_class::<PyFragments>()?;
+    m.add_function(wrap_pyfunction!(explosion, m)?)?;
+    m.add_function(wrap_pyfunction!(collision, m)?)?;
     Ok(())
 }
