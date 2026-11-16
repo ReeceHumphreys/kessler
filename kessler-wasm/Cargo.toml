@@ -1,6 +1,6 @@
 [package]
 name = "kessler-wasm"
-version = "0.1.4"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "WebAssembly bindings for Kessler, a library for simulating fragmentation events in low Earth orbit."

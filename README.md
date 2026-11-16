@@ -25,7 +25,7 @@ adding the following line to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-kessler = "0.1.4"
+kessler = "0.2.0"
 ```
 
 ## Usage
