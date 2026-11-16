@@ -22,7 +22,7 @@ rand = { workspace = true, features = ["std_rng"] }
 members = ["kesspy", "kessler-wasm"]
 
 [workspace.package]
-version = "0.3.0" # One version for every package, released with a single v* tag
+version = "0.4.0" # One version for every package, released with a single v* tag
 edition = "2024"
 rust-version = "1.87"
 license = "MIT"
