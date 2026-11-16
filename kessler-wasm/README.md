@@ -1,10 +1,12 @@
 # kessler-wasm
 
-WebAssembly bindings for [Kessler](../README.md). Build with [wasm-pack](https://rustwasm.github.io/wasm-pack/):
+WebAssembly bindings for [Kessler](../README.md), for use with a bundler:
 
 ```shell
-wasm-pack build kessler-wasm
+npm install kessler-wasm
 ```
+
+To build it yourself, use [wasm-pack](https://github.com/wasm-bindgen/wasm-pack): `wasm-pack build kessler-wasm`.
 
 ```js
 import { SatKind, collision, explosion } from "kessler-wasm";

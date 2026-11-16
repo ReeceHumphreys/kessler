@@ -1,0 +1,26 @@
+name: kessler-wasm release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npx -y wasm-pack@0.15.1 build kessler-wasm --release
+      # Trusted publishing needs npm 11.5.1 or later; it also adds provenance.
+      - run: npm install -g npm@latest && npm publish
+        working-directory: kessler-wasm/pkg
