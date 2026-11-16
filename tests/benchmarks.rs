@@ -25,7 +25,10 @@ fn lc(f: &Fragments, threshold: f32) -> usize {
 }
 
 fn speed(f: &Fragments) -> Vec<f32> {
-    f.delta_v.iter().map(|v| v.iter().map(|c| c * c).sum::<f32>().sqrt()).collect()
+    f.delta_v
+        .iter()
+        .map(|v| v.iter().map(|c| c * c).sum::<f32>().sqrt())
+        .collect()
 }
 
 /// Mean and standard deviation of each row's count over `RUNS` seeded runs.
@@ -62,7 +65,10 @@ fn thousands(n: u64) -> String {
 fn table<const N: usize>(names: [&str; N], rows: &[Row<N>], stats: &[(f64, f64)]) -> String {
     let mut out = format!("| | Kessler | {} |\n|---|---|{}\n", names.join(" | "), "---|".repeat(N));
     for ((label, _, refs), (mean, sd)) in rows.iter().zip(stats) {
-        let refs: Vec<String> = refs.iter().map(|r| r.map_or("–".into(), |r| thousands(r.into()))).collect();
+        let refs: Vec<String> = refs
+            .iter()
+            .map(|r| r.map_or("–".into(), |r| thousands(r.into())))
+            .collect();
         let kessler = format!("{} ± {}", thousands(mean.round() as u64), thousands(sd.round() as u64));
         out += &format!("| {label} | {kessler} | {} |\n", refs.join(" | "));
     }
@@ -73,29 +79,87 @@ fn table<const N: usize>(names: [&str; N], rows: &[Row<N>], stats: &[(f64, f64)]
 #[ignore = "slow; prints the README tables"]
 fn print_readme_tables() {
     let explosion_rows: [Row<6>; 7] = [
-        ("L<sub>c</sub> > 1 mm", |f| lc(f, 0.001), [378_581, 37_865, 1_217_054, 324_886, 434_928, 378_568].map(Some)),
-        ("L<sub>c</sub> > 1 cm", |f| lc(f, 0.01), [9_403, 960, 11_724, 8_159, 10_731, 10_312].map(Some)),
-        ("L<sub>c</sub> > 10 cm", |f| lc(f, 0.1), [234, 32, 230, 206, 248, 253].map(Some)),
+        (
+            "L<sub>c</sub> > 1 mm",
+            |f| lc(f, 0.001),
+            [378_581, 37_865, 1_217_054, 324_886, 434_928, 378_568].map(Some),
+        ),
+        (
+            "L<sub>c</sub> > 1 cm",
+            |f| lc(f, 0.01),
+            [9_403, 960, 11_724, 8_159, 10_731, 10_312].map(Some),
+        ),
+        (
+            "L<sub>c</sub> > 10 cm",
+            |f| lc(f, 0.1),
+            [234, 32, 230, 206, 248, 253].map(Some),
+        ),
         ("L<sub>c</sub> > 1 m", |f| lc(f, 1.0), [7, 9, 0, 6, 8, 1].map(Some)),
-        ("Mass > 1 g", |f| count(&f.mass, 1e-3), [Some(2_472), Some(254), Some(25_844), Some(2_093), Some(2_525), None]),
-        ("Area > 1 cm²", |f| count(&f.area, 1e-4), [Some(5_878), None, Some(31_124), Some(5_024), Some(6_416), None]),
-        ("Δv > 100 m/s", |f| count(&speed(f), 100.0), [Some(112_932), Some(11_380), Some(31_124), Some(98_717), Some(132_032), None]),
+        (
+            "Mass > 1 g",
+            |f| count(&f.mass, 1e-3),
+            [Some(2_472), Some(254), Some(25_844), Some(2_093), Some(2_525), None],
+        ),
+        (
+            "Area > 1 cm²",
+            |f| count(&f.area, 1e-4),
+            [Some(5_878), None, Some(31_124), Some(5_024), Some(6_416), None],
+        ),
+        (
+            "Δv > 100 m/s",
+            |f| count(&speed(f), 100.0),
+            [
+                Some(112_932),
+                Some(11_380),
+                Some(31_124),
+                Some(98_717),
+                Some(132_032),
+                None,
+            ],
+        ),
     ];
     let collision_rows: [Row<5>; 2] = [
-        ("L<sub>c</sub> > 1 mm", |f| lc(f, 0.001), [2_416_795, 2_416_790, 4_723_391, 2_957_159, 2_416_783].map(Some)),
-        ("L<sub>c</sub> > 10 cm", |f| lc(f, 0.1), [850, 935, 1_539, 862, 1_017].map(Some)),
+        (
+            "L<sub>c</sub> > 1 mm",
+            |f| lc(f, 0.001),
+            [2_416_795, 2_416_790, 4_723_391, 2_957_159, 2_416_783].map(Some),
+        ),
+        (
+            "L<sub>c</sub> > 10 cm",
+            |f| lc(f, 0.1),
+            [850, 935, 1_539, 862, 1_017].map(Some),
+        ),
     ];
 
-    let explosion_stats = stats(&explosion_rows, |rng| explosion(1000.0, SatKind::RocketBody, 0.001, rng));
+    let explosion_stats = stats(&explosion_rows, |rng| {
+        explosion(1000.0, SatKind::RocketBody, 0.001, rng).unwrap()
+    });
     let collision_stats = stats(&collision_rows, |rng| {
-        collision(1000.0, SatKind::RocketBody, 10.0, SatKind::Spacecraft, 10_000.0, 0.001, rng)
+        collision(
+            1000.0,
+            SatKind::RocketBody,
+            10.0,
+            SatKind::Spacecraft,
+            10_000.0,
+            0.001,
+            rng,
+        )
+        .unwrap()
     });
 
     let tables = format!(
         "**Explosion** of a 1000 kg rocket body:\n\n{}\n\
          **Catastrophic collision** of a 1000 kg rocket body with a 10 kg projectile at 10 km/s:\n\n{}",
-        table(["ASI", "CNSA", "DLR", "ESA", "NASA", "CiELO"], &explosion_rows, &explosion_stats),
-        table(["ASI", "CNSA", "ESA", "NASA", "CiELO"], &collision_rows, &collision_stats),
+        table(
+            ["ASI", "CNSA", "DLR", "ESA", "NASA", "CiELO"],
+            &explosion_rows,
+            &explosion_stats
+        ),
+        table(
+            ["ASI", "CNSA", "ESA", "NASA", "CiELO"],
+            &collision_rows,
+            &collision_stats
+        ),
     );
     println!("{tables}");
 }

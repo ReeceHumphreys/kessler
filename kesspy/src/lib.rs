@@ -1,4 +1,5 @@
 use numpy::{PyArray1, PyArray2};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -49,6 +50,10 @@ impl PyFragments {
     }
 }
 
+fn value_error(e: kessler::InputError) -> PyErr {
+    PyValueError::new_err(e.to_string())
+}
+
 fn rng(seed: Option<u64>) -> StdRng {
     seed.map_or_else(StdRng::from_entropy, StdRng::seed_from_u64)
 }
@@ -63,7 +68,8 @@ fn explosion(
     min_characteristic_length: f32,
     seed: Option<u64>,
 ) -> PyResult<PyFragments> {
-    PyFragments::new(py, kessler::explosion(mass, kind.into(), min_characteristic_length, &mut rng(seed)))
+    let f = kessler::explosion(mass, kind.into(), min_characteristic_length, &mut rng(seed)).map_err(value_error)?;
+    PyFragments::new(py, f)
 }
 
 /// Breaks up two objects colliding at `impact_speed`. Inputs and outputs are SI (m, kg, m/s). Pass a `seed` for
@@ -89,7 +95,8 @@ fn collision(
         impact_speed,
         min_characteristic_length,
         &mut rng(seed),
-    );
+    )
+    .map_err(value_error)?;
     PyFragments::new(py, f)
 }
 

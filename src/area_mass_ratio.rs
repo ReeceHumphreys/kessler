@@ -36,7 +36,9 @@ fn large_chi(sat_kind: &SatKind, lambda_lc: f32, rng: &mut impl Rng) -> f32 {
 
 /// log10(A/M) for fragments under 8 cm.
 fn small_chi(lambda_lc: f32, rng: &mut impl Rng) -> f32 {
-    Normal::new(mean_soc(lambda_lc), sigma_soc(lambda_lc)).unwrap().sample(rng)
+    Normal::new(mean_soc(lambda_lc), sigma_soc(lambda_lc))
+        .unwrap()
+        .sample(rng)
 }
 
 // ------------------ Helpers ------------------

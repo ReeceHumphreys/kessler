@@ -39,9 +39,64 @@ pub struct Fragments {
     pub delta_v: Vec<[f32; 3]>,
 }
 
+/// Why [`explosion`] or [`collision`] rejected its input.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InputError {
+    /// A mass wasn't a positive, finite number.
+    Mass,
+    /// The minimum characteristic length was outside the 1 mm to 1 m range the model is valid for (Krisko, 2011).
+    MinCharacteristicLength,
+    /// The impact speed wasn't a positive, finite number.
+    ImpactSpeed,
+}
+
+impl std::fmt::Display for InputError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            InputError::Mass => "mass must be a positive, finite number of kg",
+            InputError::MinCharacteristicLength => {
+                "min_characteristic_length must be at least 0.001 m and below 1 m, the range the model is valid for"
+            }
+            InputError::ImpactSpeed => "impact_speed must be a positive, finite number of m/s",
+        })
+    }
+}
+
+impl std::error::Error for InputError {}
+
+fn check(valid: bool, error: InputError) -> Result<(), InputError> {
+    if valid {
+        Ok(())
+    } else {
+        Err(error)
+    }
+}
+
+fn positive(x: f32) -> bool {
+    x > 0.0 && x.is_finite()
+}
+
+fn check_min_characteristic_length(lc: f32) -> Result<(), InputError> {
+    check(
+        (0.001..POWER_LAW_MAX).contains(&lc),
+        InputError::MinCharacteristicLength,
+    )
+}
+
 /// Breaks up a single object of `mass` [kg]. Only fragments at least `min_characteristic_length` [m] across are
 /// modelled; together they carry all of `mass`, most of it in 2–8 fragments over 1 m.
-pub fn explosion(mass: f32, kind: SatKind, min_characteristic_length: f32, rng: &mut impl Rng) -> Fragments {
+///
+/// # Errors
+///
+/// If `mass` isn't positive and finite, or `min_characteristic_length` isn't in [0.001, 1) m.
+pub fn explosion(
+    mass: f32,
+    kind: SatKind,
+    min_characteristic_length: f32,
+    rng: &mut impl Rng,
+) -> Result<Fragments, InputError> {
+    check(positive(mass), InputError::Mass)?;
+    check_min_characteristic_length(min_characteristic_length)?;
     let max_characteristic_length = characteristic_length(mass).min(POWER_LAW_MAX);
     let n = |lc: f32| 6.0 * lc.powf(-1.6);
     let params = Params {
@@ -58,7 +113,7 @@ pub fn explosion(mass: f32, kind: SatKind, min_characteristic_length: f32, rng: 
         remainder_characteristic_length: None,
         max_delta_v: None,
     };
-    breakup(&params, rng)
+    Ok(breakup(&params, rng))
 }
 
 /// Breaks up two objects colliding at `impact_speed` [m/s] relative to each other. Masses are in [kg]; only
@@ -67,6 +122,10 @@ pub fn explosion(mass: f32, kind: SatKind, min_characteristic_length: f32, rng: 
 /// Above 40 J/g of target mass the collision is catastrophic and both objects fragment completely, with most of the
 /// mass in a few fragments of about 1 m. Otherwise the projectile is destroyed and the target survives as one large
 /// cratered fragment. Either way the fragments carry all of `mass_a + mass_b`.
+///
+/// # Errors
+///
+/// If a mass or `impact_speed` isn't positive and finite, or `min_characteristic_length` isn't in [0.001, 1) m.
 pub fn collision(
     mass_a: f32,
     kind_a: SatKind,
@@ -75,8 +134,15 @@ pub fn collision(
     impact_speed: f32,
     min_characteristic_length: f32,
     rng: &mut impl Rng,
-) -> Fragments {
-    let (m_targ, m_proj) = if mass_b > mass_a { (mass_b, mass_a) } else { (mass_a, mass_b) };
+) -> Result<Fragments, InputError> {
+    check(positive(mass_a) && positive(mass_b), InputError::Mass)?;
+    check(positive(impact_speed), InputError::ImpactSpeed)?;
+    check_min_characteristic_length(min_characteristic_length)?;
+    let (m_targ, m_proj) = if mass_b > mass_a {
+        (mass_b, mass_a)
+    } else {
+        (mass_a, mass_b)
+    };
     let catastrophic = is_catastrophic(m_proj, m_targ, impact_speed);
     let m = if catastrophic {
         m_proj + m_targ
@@ -109,7 +175,7 @@ pub fn collision(
         // Without a cap a few fragments get unphysical speeds, around 60 km/s (Letizia, 2016, A.1).
         max_delta_v: Some(1.3 * impact_speed),
     };
-    breakup(&params, rng)
+    Ok(breakup(&params, rng))
 }
 
 /// The power law's upper limit [m]; larger fragments are placed by mass conservation instead (Krisko, 2011).
@@ -137,7 +203,11 @@ struct Params {
 
 fn breakup(p: &Params, rng: &mut impl Rng) -> Fragments {
     // (characteristic length, A/M, area) of each power-law fragment
-    let lc_dist = PowerLaw::new(p.min_characteristic_length, p.max_characteristic_length, p.power_law_exponent);
+    let lc_dist = PowerLaw::new(
+        p.min_characteristic_length,
+        p.max_characteristic_length,
+        p.power_law_exponent,
+    );
     let mut cloud: Vec<(f32, f32, f32)> = (0..p.count)
         .map(|_| {
             let lc = lc_dist.sample(rng);
@@ -159,7 +229,9 @@ fn breakup(p: &Params, rng: &mut impl Rng) -> Fragments {
         fragments.push(lc, am, area);
     }
     for mass in split(f64::from(p.input_mass) - cloud_mass, p.remainder_pieces.clone(), rng) {
-        let lc = p.remainder_characteristic_length.unwrap_or_else(|| characteristic_length(mass));
+        let lc = p
+            .remainder_characteristic_length
+            .unwrap_or_else(|| characteristic_length(mass));
         let area = area(lc);
         fragments.push(lc, area / mass, area);
     }
@@ -184,7 +256,10 @@ fn split(mass: f64, pieces: RangeInclusive<usize>, rng: &mut impl Rng) -> Vec<f3
     let mut cuts: Vec<f64> = (1..rng.gen_range(pieces)).map(|_| rng.gen_range(0.0..mass)).collect();
     cuts.extend([0.0, mass]);
     cuts.sort_by(f64::total_cmp);
-    cuts.windows(2).map(|w| (w[1] - w[0]) as f32).filter(|&m| m > 0.0).collect()
+    cuts.windows(2)
+        .map(|w| (w[1] - w[0]) as f32)
+        .filter(|&m| m > 0.0)
+        .collect()
 }
 
 /// Characteristic length [m] of a satellite, from its mass [kg].
@@ -237,7 +312,11 @@ struct PowerLaw {
 impl PowerLaw {
     fn new(x0: f32, x1: f32, n: f32) -> Self {
         let x0_pow = x0.powf(n + 1.);
-        PowerLaw { x0_pow, span: x1.powf(n + 1.) - x0_pow, inv_exponent: 1. / (n + 1.) }
+        PowerLaw {
+            x0_pow,
+            span: x1.powf(n + 1.) - x0_pow,
+            inv_exponent: 1. / (n + 1.),
+        }
     }
 
     fn sample(&self, rng: &mut impl Rng) -> f32 {

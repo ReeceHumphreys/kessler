@@ -54,8 +54,14 @@ impl Fragments {
 
 /// Breaks up a single object. Inputs and outputs are SI (m, kg, m/s). Pass a `seed` for reproducible results.
 #[wasm_bindgen]
-pub fn explosion(mass: f32, kind: SatKind, min_characteristic_length: f32, seed: Option<u32>) -> Fragments {
-    Fragments(kessler::explosion(mass, kind.into(), min_characteristic_length, &mut rng(seed)))
+pub fn explosion(
+    mass: f32,
+    kind: SatKind,
+    min_characteristic_length: f32,
+    seed: Option<u32>,
+) -> Result<Fragments, JsError> {
+    let f = kessler::explosion(mass, kind.into(), min_characteristic_length, &mut rng(seed))?;
+    Ok(Fragments(f))
 }
 
 /// Breaks up two colliding objects. Inputs and outputs are SI (m, kg, m/s). Pass a `seed` for reproducible results.
@@ -68,7 +74,7 @@ pub fn collision(
     impact_speed: f32,
     min_characteristic_length: f32,
     seed: Option<u32>,
-) -> Fragments {
+) -> Result<Fragments, JsError> {
     let f = kessler::collision(
         mass_a,
         kind_a.into(),
@@ -77,8 +83,8 @@ pub fn collision(
         impact_speed,
         min_characteristic_length,
         &mut rng(seed),
-    );
-    Fragments(f)
+    )?;
+    Ok(Fragments(f))
 }
 
 fn rng(seed: Option<u32>) -> StdRng {
