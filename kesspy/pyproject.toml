@@ -1,30 +1,26 @@
-[tool.poetry]
+[build-system]
+requires = ["maturin>=1.16,<2"]
+build-backend = "maturin"
+
+[project]
 name = "kesspy"
-version = "0.3.0"
+dynamic = ["version"]
 description = "An implementation of the NASA Standard Breakup Model in Python"
-authors = ["Reece Humphreys <reecewh@icloud.com>"]
-license = "MIT"
 readme = "README.md"
-repository = "https://github.com/ReeceHumphreys/kessler"
-documentation = "https://kesspy.readthedocs.io/en/latest/"
+license = "MIT"
+authors = [{ name = "Reece Humphreys", email = "reecewh@icloud.com" }]
+requires-python = ">=3.10"
+dependencies = ["numpy"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Rust",
     "Operating System :: OS Independent",
 ]
 
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/ReeceHumphreys/kessler/issues"
+[project.urls]
+Repository = "https://github.com/ReeceHumphreys/kessler"
+Issues = "https://github.com/ReeceHumphreys/kessler/issues"
+Documentation = "https://kesspy.readthedocs.io/en/latest/"
 
-[tool.poetry.dependencies]
-python = "^3.8.13"
-
-[tool.poetry.dev-dependencies]
-pytest = "^7.1.2"
-
-[tool.poetry.group.dev.dependencies]
-maturin = "^1.3.2"
-
-[build-system]
-requires = ["maturin>=1,<2"]
-build-backend = "maturin"
+[dependency-groups]
+dev = ["maturin>=1.16,<2", "pytest"]

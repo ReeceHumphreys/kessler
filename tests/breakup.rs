@@ -1,6 +1,6 @@
-use kessler::{collision, explosion, Fragments, InputError, SatKind};
-use rand::rngs::StdRng;
+use kessler::{Fragments, InputError, SatKind, collision, explosion};
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 fn rng() -> StdRng {
     StdRng::seed_from_u64(42)
@@ -9,9 +9,11 @@ fn rng() -> StdRng {
 fn assert_consistent(f: &Fragments) {
     let n = f.characteristic_length.len();
     assert!(n > 0);
-    assert!([f.am_ratio.len(), f.area.len(), f.mass.len(), f.delta_v.len()]
-        .iter()
-        .all(|&len| len == n));
+    assert!(
+        [f.am_ratio.len(), f.area.len(), f.mass.len(), f.delta_v.len()]
+            .iter()
+            .all(|&len| len == n)
+    );
     for i in 0..n {
         assert!((f.mass[i] - f.area[i] / f.am_ratio[i]).abs() <= f.mass[i].abs() * 1e-6);
     }

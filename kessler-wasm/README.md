@@ -16,3 +16,6 @@ debris.deltaV;  // Float32Array, flattened [x0, y0, z0, x1, ...]
 
 collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Spacecraft, 9500.0, 0.1);
 ```
+
+Invalid input (a non-positive mass or speed, or a minimum size outside 1 mm to 1 m) throws an `Error`. A given seed
+gives the same fragments as the Rust and Python packages.

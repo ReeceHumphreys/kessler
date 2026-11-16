@@ -1,11 +1,10 @@
 //! Area-to-mass ratio distributions of the NASA Standard Breakup Model (Johnson et al., 2001), with the 8–11 cm
 //! bridge as in ESA's implementation (Schuhmacher et al., 2021).
 
-use crate::{exp10, SatKind};
+use crate::{SatKind, exp10};
 
-use rand::distributions::Distribution;
-use rand::Rng;
-use rand_distr::Normal;
+use rand::{Rng, RngExt};
+use rand_distr::{Distribution, Normal};
 
 /// Samples the area-to-mass ratio [m²/kg] of a fragment with the given characteristic length [m].
 pub fn am_ratio(sat_kind: SatKind, characteristic_len: f32, rng: &mut impl Rng) -> f32 {
@@ -26,7 +25,7 @@ pub fn am_ratio(sat_kind: SatKind, characteristic_len: f32, rng: &mut impl Rng) 
 /// log10(A/M) for fragments over 11 cm: the bimodal density α·N(μ₁, σ₁) + (1 − α)·N(μ₂, σ₂), i.e. a mixture that
 /// picks mode 1 with probability α. (Not α·n₁ + (1 − α)·n₂, which is a narrower, unimodal normal.)
 fn large_chi(sat_kind: &SatKind, lambda_lc: f32, rng: &mut impl Rng) -> f32 {
-    let (mu, sigma) = if rng.gen::<f32>() < alpha(sat_kind, lambda_lc) {
+    let (mu, sigma) = if rng.random::<f32>() < alpha(sat_kind, lambda_lc) {
         (mean_1(sat_kind, lambda_lc), sigma_1(sat_kind, lambda_lc))
     } else {
         (mean_2(sat_kind, lambda_lc), sigma_2(sat_kind, lambda_lc))
@@ -134,8 +133,8 @@ fn sigma_soc(lambda_lc: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::rngs::StdRng;
     use rand::SeedableRng;
+    use rand::rngs::StdRng;
 
     fn log10_am_stats(kind: SatKind, lc: f32) -> (f32, f32) {
         let mut rng = StdRng::seed_from_u64(1);

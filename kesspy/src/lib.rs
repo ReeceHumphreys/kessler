@@ -1,11 +1,11 @@
-use numpy::{PyArray1, PyArray2};
+use numpy::{PyArray1, PyArray2, PyArrayMethods};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::rngs::Xoshiro256PlusPlus;
 
-#[pyclass(name = "SatKind")]
-#[derive(Clone, Copy)]
+#[pyclass(name = "SatKind", eq, eq_int, frozen, from_py_object)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum PySatKind {
     RocketBody,
     Spacecraft,
@@ -21,7 +21,7 @@ impl From<PySatKind> for kessler::SatKind {
 }
 
 /// The fragments from one event, as numpy arrays with one row per fragment. All values are SI.
-#[pyclass(name = "Fragments")]
+#[pyclass(name = "Fragments", frozen)]
 pub struct PyFragments {
     #[pyo3(get)]
     characteristic_length: Py<PyArray1<f32>>,
@@ -41,11 +41,11 @@ impl PyFragments {
         let n = f.delta_v.len();
         let delta_v = PyArray1::from_iter(py, f.delta_v.into_iter().flatten()).reshape([n, 3])?;
         Ok(PyFragments {
-            characteristic_length: PyArray1::from_vec(py, f.characteristic_length).into(),
-            am_ratio: PyArray1::from_vec(py, f.am_ratio).into(),
-            area: PyArray1::from_vec(py, f.area).into(),
-            mass: PyArray1::from_vec(py, f.mass).into(),
-            delta_v: delta_v.into(),
+            characteristic_length: PyArray1::from_vec(py, f.characteristic_length).unbind(),
+            am_ratio: PyArray1::from_vec(py, f.am_ratio).unbind(),
+            area: PyArray1::from_vec(py, f.area).unbind(),
+            mass: PyArray1::from_vec(py, f.mass).unbind(),
+            delta_v: delta_v.unbind(),
         })
     }
 }
@@ -54,8 +54,10 @@ fn value_error(e: kessler::InputError) -> PyErr {
     PyValueError::new_err(e.to_string())
 }
 
-fn rng(seed: Option<u64>) -> StdRng {
-    seed.map_or_else(StdRng::from_entropy, StdRng::seed_from_u64)
+/// Xoshiro256++ rather than `SmallRng`, which picks a different algorithm on 32-bit platforms, so a seed gives the same
+/// fragments everywhere.
+fn rng(seed: Option<u64>) -> Xoshiro256PlusPlus {
+    seed.map_or_else(rand::make_rng, Xoshiro256PlusPlus::seed_from_u64)
 }
 
 /// Breaks up a single object. Inputs and outputs are SI (m, kg, m/s). Pass a `seed` for reproducible results.
@@ -102,7 +104,7 @@ fn collision(
 
 // The name of the module must be the same as the rust package name
 #[pymodule]
-fn kesspy(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+fn kesspy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySatKind>()?;
     m.add_class::<PyFragments>()?;
     m.add_function(wrap_pyfunction!(explosion, m)?)?;

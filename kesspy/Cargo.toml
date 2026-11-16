@@ -1,15 +1,18 @@
 [package]
 name = "kesspy"
 version = "0.3.0"
-edition = "2021"
+publish = false # Published to PyPI, not crates.io
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "kesspy"
 crate-type = ["cdylib"]
 
 [dependencies]
-kessler = { path = ".." }
-rand = "0.8.5"
-numpy = "0.18.0"
-pyo3 = { version = "0.18.1", features = ["extension-module"] }
+kessler.workspace = true
+numpy = "0.30.0"
+pyo3 = { version = "0.30.1", features = ["extension-module", "abi3-py310"] }
+rand = { workspace = true, features = ["sys_rng"] }

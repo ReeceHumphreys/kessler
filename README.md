@@ -14,18 +14,10 @@ in low earth orbit according to the NASA standard breakup model.
 
 ## Installation
 
-To use Kessler, you'll need to have Rust and Cargo installed on your system.
-You can install Rust and Cargo by following the instructions on the official
-Rust website:
+Kessler needs Rust 1.87 or later. Add it, and `rand` for a random number generator, to your project:
 
-<https://www.rust-lang.org/tools/install>
-
-Once you have Rust and Cargo installed, you can add Kessler to your project by
-adding the following line to your `Cargo.toml` file:
-
-```toml
-[dependencies]
-kessler = "0.2.0"
+```shell
+cargo add kessler rand
 ```
 
 ## Usage
@@ -88,17 +80,17 @@ seeded runs. To regenerate them, run
 |---|---|---|---|---|---|---|---|
 | L<sub>c</sub> > 1 mm | 378,572 ± 2 | 378,581 | 37,865 | 1,217,054 | 324,886 | 434,928 | 378,568 |
 | L<sub>c</sub> > 1 cm | 9,527 ± 102 | 9,403 | 960 | 11,724 | 8,159 | 10,731 | 10,312 |
-| L<sub>c</sub> > 10 cm | 234 ± 15 | 234 | 32 | 230 | 206 | 248 | 253 |
-| L<sub>c</sub> > 1 m | 4 ± 1 | 7 | 9 | 0 | 6 | 8 | 1 |
-| Mass > 1 g | 2,667 ± 47 | 2,472 | 254 | 25,844 | 2,093 | 2,525 | – |
+| L<sub>c</sub> > 10 cm | 233 ± 17 | 234 | 32 | 230 | 206 | 248 | 253 |
+| L<sub>c</sub> > 1 m | 3 ± 1 | 7 | 9 | 0 | 6 | 8 | 1 |
+| Mass > 1 g | 2,667 ± 48 | 2,472 | 254 | 25,844 | 2,093 | 2,525 | – |
 | Area > 1 cm² | 5,882 ± 73 | 5,878 | – | 31,124 | 5,024 | 6,416 | – |
-| Δv > 100 m/s | 114,164 ± 249 | 112,932 | 11,380 | 31,124 | 98,717 | 132,032 | – |
+| Δv > 100 m/s | 114,191 ± 270 | 112,932 | 11,380 | 31,124 | 98,717 | 132,032 | – |
 
 **Catastrophic collision** of a 1000 kg rocket body with a 10 kg projectile at 10 km/s:
 
 | | Kessler | ASI | CNSA | ESA | NASA | CiELO |
 |---|---|---|---|---|---|---|
-| L<sub>c</sub> > 1 mm | 2,416,789 ± 2 | 2,416,795 | 2,416,790 | 4,723,391 | 2,957,159 | 2,416,783 |
+| L<sub>c</sub> > 1 mm | 2,416,790 ± 1 | 2,416,795 | 2,416,790 | 4,723,391 | 2,957,159 | 2,416,783 |
 | L<sub>c</sub> > 10 cm | 904 ± 30 | 850 | 935 | 1,539 | 862 | 1,017 |
 
 ### Sources

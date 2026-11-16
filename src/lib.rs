@@ -18,7 +18,7 @@ struct ReadmeDoctests;
 use std::ops::RangeInclusive;
 
 use area_mass_ratio::am_ratio;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use rand_distr::{Distribution, Normal, UnitSphere};
 
 /// The kind of object breaking up, which picks its area-to-mass distribution. Use `Spacecraft` for anything that
@@ -70,11 +70,7 @@ impl std::fmt::Display for InputError {
 impl std::error::Error for InputError {}
 
 fn check(valid: bool, error: InputError) -> Result<(), InputError> {
-    if valid {
-        Ok(())
-    } else {
-        Err(error)
-    }
+    if valid { Ok(()) } else { Err(error) }
 }
 
 fn positive(x: f32) -> bool {
@@ -258,7 +254,9 @@ fn split(mass: f64, pieces: RangeInclusive<usize>, rng: &mut impl Rng) -> Vec<f3
     if mass <= 0.0 {
         return Vec::new();
     }
-    let mut cuts: Vec<f64> = (1..rng.gen_range(pieces)).map(|_| rng.gen_range(0.0..mass)).collect();
+    let mut cuts: Vec<f64> = (1..rng.random_range(pieces))
+        .map(|_| rng.random_range(0.0..mass))
+        .collect();
     cuts.extend([0.0, mass]);
     cuts.sort_by(f64::total_cmp);
     cuts.windows(2)
@@ -325,7 +323,7 @@ impl PowerLaw {
     }
 
     fn sample(&self, rng: &mut impl Rng) -> f32 {
-        let y: f32 = rng.gen_range(0.0..=1.0);
+        let y: f32 = rng.random_range(0.0..=1.0);
         (self.span * y + self.x0_pow).powf(self.inv_exponent)
     }
 }

@@ -7,9 +7,9 @@
 //! Reference counts are the inter-agency comparison of Rossi et al. (2006), as reproduced in Letizia (2016), tables
 //! A.1-A.2 (which adds CiELO) and Humphreys (2021), table 1 (which adds the mass, area and Δv rows).
 
-use kessler::{collision, explosion, Fragments, SatKind};
-use rand::rngs::StdRng;
+use kessler::{Fragments, SatKind, collision, explosion};
 use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 const RUNS: u64 = 10;
 

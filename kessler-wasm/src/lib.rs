@@ -1,7 +1,7 @@
 //! WebAssembly bindings for [`kessler`].
 
-use rand::rngs::StdRng;
 use rand::SeedableRng;
+use rand::rngs::Xoshiro256PlusPlus;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -87,6 +87,8 @@ pub fn collision(
     Ok(Fragments(f))
 }
 
-fn rng(seed: Option<u32>) -> StdRng {
-    seed.map_or_else(StdRng::from_entropy, |s| StdRng::seed_from_u64(s.into()))
+/// Xoshiro256++ rather than `SmallRng`, which picks a different algorithm on 32-bit targets like this one, so a seed
+/// gives the same fragments here as in Rust and Python.
+fn rng(seed: Option<u32>) -> Xoshiro256PlusPlus {
+    seed.map_or_else(rand::make_rng, |s| Xoshiro256PlusPlus::seed_from_u64(s.into()))
 }

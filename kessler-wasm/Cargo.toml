@@ -1,17 +1,19 @@
 [package]
 name = "kessler-wasm"
 version = "0.2.0"
-edition = "2021"
-license = "MIT"
+publish = false # Published to npm, not crates.io
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 description = "WebAssembly bindings for Kessler, a library for simulating fragmentation events in low Earth orbit."
-repository = "https://github.com/reecehumphreys/kessler/"
+repository.workspace = true
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-kessler = { path = ".." }
-rand = "0.8.5"
-wasm-bindgen = "0.2.90"
-# Lets rand seed from the browser's crypto API.
-getrandom = { version = "0.2", features = ["js"] }
+kessler.workspace = true
+rand = { workspace = true, features = ["sys_rng"] }
+wasm-bindgen = "0.2.130"
+# Lets rand seed from the browser's crypto API; fine here since this crate always depends on wasm-bindgen.
+getrandom = { version = "0.4.3", features = ["wasm_js"] }

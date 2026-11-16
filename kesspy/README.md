@@ -2,7 +2,6 @@
 
 - [KessPy](#kesspy)
   - [Installation](#installation)
-  - [Requirements](#requirements)
   - [Getting Started](#getting-started)
   - [Result Data Format](#result-data-format)
   - [Contributing](#contributing)
@@ -15,20 +14,11 @@ KessPy is a Python library that uses the NASA Standard Breakup Model to simulate
 
 ## Installation
 
-KessPy runs on Python 3.6 or higher (Python 3.8 is recommended):
-Currently the package is available using pip:
+KessPy needs Python 3.10 or later. Install it with pip, which also installs numpy:
 
 ```shell
 pip install kesspy
 ```
-
-> _A conda distribution will be made available when the project is stable_
-
-## Requirements
-
-KessPy requires the following packages:
-
-- numpy
 
 ## Getting Started
 
@@ -46,7 +36,9 @@ print(f"{len(debris.mass)} fragments, mean mass {np.mean(debris.mass)} kg")
 debris = collision(500.0, SatKind.Spacecraft, 5.0, SatKind.Spacecraft, 9_500.0, 0.1)
 ```
 
-Leave out `seed` for a different result each run.
+Leave out `seed` for a different result each run. A given seed gives the same fragments on every platform, and the
+same as the Rust and JavaScript packages. Input outside the model's range (a non-positive mass or speed, or a minimum
+size outside 1 mm to 1 m) raises `ValueError`.
 
 ## Result Data Format
 
@@ -70,7 +62,13 @@ GitHub repository:
 <https://github.com/ReeceHumphreys/kessler/issues>
 
 If you'd like to contribute to the project, feel free to fork the repository and
-submit a pull request.
+submit a pull request. To build and test it locally (needs [Rust](https://rustup.rs) and [uv](https://docs.astral.sh/uv/)):
+
+```shell
+cd kesspy
+uv venv && uv pip install -e . pytest
+.venv/bin/pytest
+```
 
 ## License
 
@@ -79,5 +77,5 @@ for details.
 
 ## TODO
 
-- [ ] Update the documentation to reflect the new API
-- [ ] Add tests for the new API
+- [x] Update the documentation to reflect the new API
+- [x] Add tests for the new API
