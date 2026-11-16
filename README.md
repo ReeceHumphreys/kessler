@@ -59,6 +59,32 @@ Mass is conserved: the fragments always add up to the input mass. Following Kris
 fragments up to 1 m, and the mass it leaves over goes into 2–8 large fragments for explosions, a few ~1 m fragments
 for catastrophic collisions, or one cratered-target fragment for non-catastrophic ones.
 
+### Comparison with other implementations
+
+Counts of fragments above each size, mass, area and Δv, compared with the inter-agency comparison of the NASA breakup
+model (Rossi et al., 2006) and Letizia's (2016) CiELO. Kessler's figures are the mean ± standard deviation over 10
+seeded runs. To regenerate them, run
+`cargo test --release --test benchmarks -- --ignored --nocapture` and paste the output here.
+
+**Explosion** of a 1000 kg rocket body:
+
+| | Kessler | ASI | CNSA | DLR | ESA | NASA | CiELO |
+|---|---|---|---|---|---|---|---|
+| L<sub>c</sub> > 1 mm | 378,572 ± 2 | 378,581 | 37,865 | 1,217,054 | 324,886 | 434,928 | 378,568 |
+| L<sub>c</sub> > 1 cm | 9,527 ± 102 | 9,403 | 960 | 11,724 | 8,159 | 10,731 | 10,312 |
+| L<sub>c</sub> > 10 cm | 234 ± 15 | 234 | 32 | 230 | 206 | 248 | 253 |
+| L<sub>c</sub> > 1 m | 4 ± 1 | 7 | 9 | 0 | 6 | 8 | 1 |
+| Mass > 1 g | 2,667 ± 47 | 2,472 | 254 | 25,844 | 2,093 | 2,525 | – |
+| Area > 1 cm² | 5,882 ± 73 | 5,878 | – | 31,124 | 5,024 | 6,416 | – |
+| Δv > 100 m/s | 114,164 ± 249 | 112,932 | 11,380 | 31,124 | 98,717 | 132,032 | – |
+
+**Catastrophic collision** of a 1000 kg rocket body with a 10 kg projectile at 10 km/s:
+
+| | Kessler | ASI | CNSA | ESA | NASA | CiELO |
+|---|---|---|---|---|---|---|
+| L<sub>c</sub> > 1 mm | 2,416,789 ± 2 | 2,416,795 | 2,416,790 | 4,723,391 | 2,957,159 | 2,416,783 |
+| L<sub>c</sub> > 10 cm | 904 ± 30 | 850 | 935 | 1,539 | 862 | 1,017 |
+
 ### Sources
 
 - N. L. Johnson et al., *NASA's new breakup model of EVOLVE 4.0*, Advances in Space Research 28(9), 2001: the model.
@@ -66,6 +92,8 @@ for catastrophic collisions, or one cratered-target fragment for non-catastrophi
   mass conservation and the corrected non-catastrophic collision mass.
 - F. Letizia, *Space debris cloud evolution in Low Earth Orbit*, PhD thesis, University of Southampton, 2016
   (appendix A.1): the 1.3 × impact speed cap on collision Δv, and the inter-agency comparison the tests check against.
+- R. Humphreys, *Orbital Debris Cloud Evolution: An Analysis of Fragmentation Events in Low Earth Orbit*, Honors
+  thesis, Florida Atlantic University, 2021 (table 1): the mass, area and Δv rows of that comparison.
 
 The Python bindings live in [`kesspy/`](kesspy) and the WebAssembly bindings in [`kessler-wasm/`](kessler-wasm).
 
