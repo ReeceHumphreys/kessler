@@ -55,6 +55,18 @@ fn main() {
 `mass` [kg] and `delta_v` [m/s, 3D]. Fragments start where the event happened; add `delta_v` to the parent's velocity
 to get each fragment's velocity.
 
+Mass is conserved: the fragments always add up to the input mass. Following Krisko (2011), the power law covers
+fragments up to 1 m, and the mass it leaves over goes into 2–8 large fragments for explosions, a few ~1 m fragments
+for catastrophic collisions, or one cratered-target fragment for non-catastrophic ones.
+
+### Sources
+
+- N. L. Johnson et al., *NASA's new breakup model of EVOLVE 4.0*, Advances in Space Research 28(9), 2001: the model.
+- P. H. Krisko, *Proper Implementation of the 1998 NASA Breakup Model*, Orbital Debris Quarterly News 15(4), 2011:
+  mass conservation and the corrected non-catastrophic collision mass.
+- F. Letizia, *Space debris cloud evolution in Low Earth Orbit*, PhD thesis, University of Southampton, 2016
+  (appendix A.1): the 1.3 × impact speed cap on collision Δv, and the inter-agency comparison the tests check against.
+
 The Python bindings live in [`kesspy/`](kesspy) and the WebAssembly bindings in [`kessler-wasm/`](kessler-wasm).
 
 ## Contributing
@@ -74,6 +86,7 @@ for details.
 
 ## TODO
 
-- [ ] Add tests
+- [x] Add tests
 - [ ] Add documentation
-- [ ] Validate results
+- [x] Validate fragment counts against the inter-agency comparison (Rossi et al., 2006)
+- [ ] Validate the A/M, area, mass and Δv distributions
