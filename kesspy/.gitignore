@@ -1,0 +1,14 @@
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# macOS Directory preferences
+.DS_Store
