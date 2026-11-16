@@ -29,6 +29,9 @@ openblas-src = { version = "0.10", features = ["cblas", "system"] }
 js-sys = "0.3.67"
 getrandom = { version = "0.2", features = ["js"] }
 
+[workspace]
+members = ["kesspy"]
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 

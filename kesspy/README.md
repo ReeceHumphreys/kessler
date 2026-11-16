@@ -83,7 +83,7 @@ In this example, we define the initial position, velocity, mass, characteristic 
 If you find a bug or have a feature request, please open an issue on the KessPy
 GitHub repository:
 
-<https://github.com/reeceHumphreys/kesspy/issues>
+<https://github.com/ReeceHumphreys/kessler/issues>
 
 If you'd like to contribute to the project, feel free to fork the repository and
 submit a pull request.

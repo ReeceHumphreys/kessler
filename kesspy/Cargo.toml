@@ -9,7 +9,6 @@ name = "kesspy"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Uses the github repo when built locally, and Crates.io when published.
-kessler = "0.1.4"
+kessler = { path = ".." }
 numpy = "0.18.0"
 pyo3 = { version = "0.18.1", features = ["extension-module"] }

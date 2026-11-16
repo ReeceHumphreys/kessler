@@ -16,7 +16,7 @@ impl CollisionEventPyWrapper {
         satellite_two: &SatellitePyWrapper,
         min_characteristic_length: f32,
     ) -> Self {
-        let satellites = &[satellite_one.0.to_owned(), satellite_two.0.to_owned()];
+        let satellites = vec![satellite_one.0.to_owned(), satellite_two.0.to_owned()];
         CollisionEventPyWrapper(CollisionEvent::new(satellites, min_characteristic_length))
     }
 }
@@ -73,8 +73,8 @@ impl SatellitePyWrapper {
         };
         SatellitePyWrapper(
             Satellite::new(
-                position,
-                velocity,
+                position.to_vec(),
+                velocity.to_vec(),
                 mass,
                 SatKind::Rb //TODO
             )
