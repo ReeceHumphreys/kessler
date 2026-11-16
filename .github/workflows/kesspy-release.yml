@@ -41,7 +41,7 @@ jobs:
         with:
           name: wheels-${{ matrix.platform.runner }}-${{ matrix.platform.target }}-${{ matrix.platform.manylinux }}
           path: dist
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         if: ${{ matrix.platform.test }}
       - name: pytest
         if: ${{ matrix.platform.test }}
@@ -79,5 +79,5 @@ jobs:
       - uses: actions/attest@v4
         with:
           subject-path: "wheels-*/*"
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv publish --trusted-publishing always 'wheels-*/*'

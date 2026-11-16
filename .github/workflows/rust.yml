@@ -36,7 +36,7 @@ jobs:
         python: ["3.10", "3.15"]
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv venv --python ${{ matrix.python }}
       - run: uv pip install ./kesspy pytest
       - run: .venv/bin/pytest kesspy/tests
