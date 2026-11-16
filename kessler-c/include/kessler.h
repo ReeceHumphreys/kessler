@@ -125,9 +125,22 @@ void kessler_fragments_free(struct KesslerFragments *fragments);
 #endif  /* KESSLER_H */
 
 #ifdef __cplusplus
+#include <cstdint>
 #include <utility>
 
+/* C++ API: the same functions without the kessler_ prefix. */
 namespace kessler {
+enum class SatKind : uint32_t { RocketBody = KESSLER_ROCKET_BODY, Spacecraft = KESSLER_SPACECRAFT };
+
+enum class Status {
+    Ok = KESSLER_STATUS_OK,
+    InvalidMass = KESSLER_STATUS_INVALID_MASS,
+    InvalidMinCharacteristicLength = KESSLER_STATUS_INVALID_MIN_CHARACTERISTIC_LENGTH,
+    InvalidImpactSpeed = KESSLER_STATUS_INVALID_IMPACT_SPEED,
+    InvalidKind = KESSLER_STATUS_INVALID_KIND,
+    NullPointer = KESSLER_STATUS_NULL_POINTER,
+};
+
 /** Owns KesslerFragments and frees them when it goes out of scope. */
 class Fragments {
   public:
@@ -141,7 +154,7 @@ class Fragments {
     }
     ~Fragments() { kessler_fragments_free(&f_); }
 
-    /** Pass to kessler_explosion or kessler_collision. */
+    /** Frees any current fragments and returns the slot to pass to the C functions. */
     KesslerFragments* out() {
         kessler_fragments_free(&f_);
         return &f_;
@@ -152,5 +165,19 @@ class Fragments {
   private:
     KesslerFragments f_{};
 };
+
+/** Breaks up a single object into out. Inputs and outputs are SI (m, kg, m/s). */
+inline Status explosion(float mass, SatKind kind, float min_characteristic_length, uint64_t seed, Fragments& out) {
+    return static_cast<Status>(
+        kessler_explosion(mass, static_cast<uint32_t>(kind), min_characteristic_length, seed, out.out()));
+}
+
+/** Breaks up two objects colliding at impact_speed into out. Inputs and outputs are SI (m, kg, m/s). */
+inline Status collision(float mass_a, SatKind kind_a, float mass_b, SatKind kind_b, float impact_speed,
+                        float min_characteristic_length, uint64_t seed, Fragments& out) {
+    return static_cast<Status>(kessler_collision(mass_a, static_cast<uint32_t>(kind_a), mass_b,
+                                                 static_cast<uint32_t>(kind_b), impact_speed,
+                                                 min_characteristic_length, seed, out.out()));
+}
 }  // namespace kessler
 #endif
