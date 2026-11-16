@@ -138,10 +138,10 @@ struct Params {
 
 fn breakup(p: &Params, rng: &mut impl Rng) -> Fragments {
     // (characteristic length, A/M, area) of each power-law fragment
+    let lc_dist = PowerLaw::new(p.min_characteristic_length, p.max_characteristic_length, p.power_law_exponent);
     let mut cloud: Vec<(f32, f32, f32)> = (0..p.count)
         .map(|_| {
-            let y = rng.gen_range(0.0..=1.0);
-            let lc = power_law(p.min_characteristic_length, p.max_characteristic_length, p.power_law_exponent, y);
+            let lc = lc_dist.sample(rng);
             (lc, am_ratio(p.kind, lc, rng), area(lc))
         })
         .collect();
@@ -212,7 +212,7 @@ fn area(characteristic_length: f32) -> f32 {
 
 fn delta_v(p: &Params, am_ratio: f32, rng: &mut impl Rng) -> [f32; 3] {
     let log_normal = Normal::new(p.delta_v_offset[0] * am_ratio.log10() + p.delta_v_offset[1], 0.4).unwrap();
-    let mut magnitude = 10.0f32.powf(log_normal.sample(rng));
+    let mut magnitude = exp10(log_normal.sample(rng));
     if let Some(max) = p.max_delta_v {
         // shortcut: stops redrawing after 1000 tries and uses the cap, which only happens at impact speeds of a few
         // m/s; switch to inverse-CDF truncated sampling if those ever matter.
@@ -220,7 +220,7 @@ fn delta_v(p: &Params, am_ratio: f32, rng: &mut impl Rng) -> [f32; 3] {
             if magnitude < max {
                 break;
             }
-            magnitude = 10.0f32.powf(log_normal.sample(rng));
+            magnitude = exp10(log_normal.sample(rng));
         }
         magnitude = magnitude.min(max);
     }
@@ -228,8 +228,26 @@ fn delta_v(p: &Params, am_ratio: f32, rng: &mut impl Rng) -> [f32; 3] {
     direction.map(|c| magnitude * c)
 }
 
-/// Samples the power law between `x0` and `x1` with exponent `n`, given a uniform sample `y` in [0, 1].
-fn power_law(x0: f32, x1: f32, n: f32, y: f32) -> f32 {
-    let step = (x1.powf(n + 1.) - x0.powf(n + 1.)) * y + x0.powf(n + 1.);
-    step.powf(1. / (n + 1.))
+/// The power law between `x0` and `x1` with exponent `n`, sampled by inverting its CDF.
+struct PowerLaw {
+    x0_pow: f32,
+    span: f32,
+    inv_exponent: f32,
+}
+
+impl PowerLaw {
+    fn new(x0: f32, x1: f32, n: f32) -> Self {
+        let x0_pow = x0.powf(n + 1.);
+        PowerLaw { x0_pow, span: x1.powf(n + 1.) - x0_pow, inv_exponent: 1. / (n + 1.) }
+    }
+
+    fn sample(&self, rng: &mut impl Rng) -> f32 {
+        let y: f32 = rng.gen_range(0.0..=1.0);
+        (self.span * y + self.x0_pow).powf(self.inv_exponent)
+    }
+}
+
+/// 10^x, which `exp` computes faster than `powf`.
+pub(crate) fn exp10(x: f32) -> f32 {
+    (x * std::f32::consts::LN_10).exp()
 }

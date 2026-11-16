@@ -1,7 +1,7 @@
 //! Area-to-mass ratio distributions of the NASA Standard Breakup Model (Johnson et al., 2001), with the 8–11 cm
 //! bridge as in ESA's implementation (Schuhmacher et al., 2021).
 
-use crate::SatKind;
+use crate::{exp10, SatKind};
 
 use rand::distributions::Distribution;
 use rand::Rng;
@@ -12,13 +12,13 @@ pub fn am_ratio(sat_kind: SatKind, characteristic_len: f32, rng: &mut impl Rng) 
     let lambda_lc = characteristic_len.log10();
     // The size thresholds are on L_c itself [m]; lambda_lc only feeds the distribution parameters.
     if characteristic_len > 0.11 {
-        10_f32.powf(large_chi(&sat_kind, lambda_lc, rng))
+        exp10(large_chi(&sat_kind, lambda_lc, rng))
     } else if characteristic_len < 0.08 {
-        10_f32.powf(small_chi(lambda_lc, rng))
+        exp10(small_chi(lambda_lc, rng))
     } else {
         // Linear bridge between the two regimes
-        let y0 = 10_f32.powf(small_chi(lambda_lc, rng));
-        let y1 = 10_f32.powf(large_chi(&sat_kind, lambda_lc, rng));
+        let y0 = exp10(small_chi(lambda_lc, rng));
+        let y1 = exp10(large_chi(&sat_kind, lambda_lc, rng));
         y0 + (characteristic_len - 0.08) * (y1 - y0) / 0.03
     }
 }
