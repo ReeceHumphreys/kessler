@@ -1,3 +1,6 @@
+//! Area-to-mass ratio distributions of the NASA Standard Breakup Model (Johnson et al., 2001), with the 8–11 cm
+//! bridge as in ESA's implementation (Schuhmacher et al., 2021).
+
 use crate::SatKind;
 
 use rand::distributions::Distribution;
@@ -6,59 +9,34 @@ use rand_distr::Normal;
 
 /// Samples the area-to-mass ratio [m²/kg] of a fragment with the given characteristic length [m].
 pub fn am_ratio(sat_kind: SatKind, characteristic_len: f32, rng: &mut impl Rng) -> f32 {
-    let sat_kind = &sat_kind;
     let lambda_lc = characteristic_len.log10();
     // The size thresholds are on L_c itself [m]; lambda_lc only feeds the distribution parameters.
     if characteristic_len > 0.11 {
-        // Bigger than 11 cm
-        // Means and Std Devs. for normal distributions
-        let mean_1 = mean_1(sat_kind, lambda_lc);
-        let mean_2 = mean_2(sat_kind, lambda_lc);
-        let std_dev_1 = sigma_1(sat_kind, lambda_lc);
-        let std_dev_2 = sigma_2(sat_kind, lambda_lc);
-
-        // Sample values from normal distributions
-        let normal_1 = Normal::new(mean_1, std_dev_1).unwrap();
-        let normal_2 = Normal::new(mean_2, std_dev_2).unwrap();
-
-        let n1 = normal_1.sample(rng);
-        let n2 = normal_2.sample(rng);
-
-        // Calculate AM Ratio
-        10_f32.powf(alpha(sat_kind, lambda_lc) * n1 + (1. - alpha(sat_kind, lambda_lc)) * n2)
+        10_f32.powf(large_chi(&sat_kind, lambda_lc, rng))
     } else if characteristic_len < 0.08 {
-        // Smaller than 8 cm
-
-        // Sample a random value from the normal distribution
-        let mean = mean_soc(lambda_lc);
-        let std_dev = sigma_soc(lambda_lc);
-        let normal = Normal::new(mean, std_dev).unwrap(); // TODO: Handle error
-        let y = normal.sample(rng);
-
-        10_f32.powf(y)
+        10_f32.powf(small_chi(lambda_lc, rng))
     } else {
-        // Case between 8 cm and 11 cm
-        // Means and Std Devs. for normal distributions
-        let mean_1 = mean_1(sat_kind, lambda_lc);
-        let mean_2 = mean_2(sat_kind, lambda_lc);
-        let std_dev_1 = sigma_1(sat_kind, lambda_lc);
-        let std_dev_2 = sigma_2(sat_kind, lambda_lc);
-
-        // Sample values from normal distributions
-        let normal_1 = Normal::new(mean_1, std_dev_1).unwrap();
-        let normal_2 = Normal::new(mean_2, std_dev_2).unwrap();
-
-        let n = Normal::new(mean_soc(lambda_lc), sigma_soc(lambda_lc))
-            .unwrap()
-            .sample(rng);
-        let n1 = normal_1.sample(rng);
-        let n2 = normal_2.sample(rng);
-
-        let y0 = 10_f32.powf(n);
-        let y1 = 10_f32.powf(alpha(sat_kind, lambda_lc) * n1 + (1.0 - alpha(sat_kind, lambda_lc)) * n2);
-
-        y0 + (characteristic_len - 0.08) * (y1 - y0) / (0.03)
+        // Linear bridge between the two regimes
+        let y0 = 10_f32.powf(small_chi(lambda_lc, rng));
+        let y1 = 10_f32.powf(large_chi(&sat_kind, lambda_lc, rng));
+        y0 + (characteristic_len - 0.08) * (y1 - y0) / 0.03
     }
+}
+
+/// log10(A/M) for fragments over 11 cm: the bimodal density α·N(μ₁, σ₁) + (1 − α)·N(μ₂, σ₂), i.e. a mixture that
+/// picks mode 1 with probability α. (Not α·n₁ + (1 − α)·n₂, which is a narrower, unimodal normal.)
+fn large_chi(sat_kind: &SatKind, lambda_lc: f32, rng: &mut impl Rng) -> f32 {
+    let (mu, sigma) = if rng.gen::<f32>() < alpha(sat_kind, lambda_lc) {
+        (mean_1(sat_kind, lambda_lc), sigma_1(sat_kind, lambda_lc))
+    } else {
+        (mean_2(sat_kind, lambda_lc), sigma_2(sat_kind, lambda_lc))
+    };
+    Normal::new(mu, sigma).unwrap().sample(rng)
+}
+
+/// log10(A/M) for fragments under 8 cm.
+fn small_chi(lambda_lc: f32, rng: &mut impl Rng) -> f32 {
+    Normal::new(mean_soc(lambda_lc), sigma_soc(lambda_lc)).unwrap().sample(rng)
 }
 
 // ------------------ Helpers ------------------
@@ -129,7 +107,10 @@ fn mean_2(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
 // Handles RB and SC case
 fn sigma_2(sat_kind: &SatKind, lambda_lc: f32) -> f32 {
     match sat_kind {
-        SatKind::RocketBody => distribution_constant(lambda_lc, -0.5, -0.3, 0.5, 0.3, |lambda_lc| 0.5 - (lambda_lc + 0.5)),
+        // 0.28 - 0.1636(λ + 1) is the form continuous at both ends; ESA's code has -0.28 here, ODAP 0.29.
+        SatKind::RocketBody => distribution_constant(lambda_lc, -1.0, 0.1, 0.28, 0.1, |lambda_lc| {
+            0.28 - 0.1636 * (lambda_lc + 1.0)
+        }),
         _ => distribution_constant(lambda_lc, -0.5, -0.3, 0.5, 0.3, |lambda_lc| 0.5 - (lambda_lc + 0.5)),
     }
 }
@@ -154,23 +135,41 @@ mod tests {
     use rand::rngs::StdRng;
     use rand::SeedableRng;
 
-    fn mean_log10_am(kind: SatKind, lc: f32) -> f32 {
+    fn log10_am_stats(kind: SatKind, lc: f32) -> (f32, f32) {
         let mut rng = StdRng::seed_from_u64(1);
-        (0..4000).map(|_| am_ratio(kind, lc, &mut rng).log10()).sum::<f32>() / 4000.0
+        let chi: Vec<f32> = (0..20_000).map(|_| am_ratio(kind, lc, &mut rng).log10()).collect();
+        let mean = chi.iter().sum::<f32>() / chi.len() as f32;
+        let var = chi.iter().map(|c| (c - mean).powi(2)).sum::<f32>() / chi.len() as f32;
+        (mean, var.sqrt())
     }
 
     #[test]
-    fn fragments_over_11cm_use_the_bimodal_distribution() {
-        // At L_c = 0.5 m a rocket body's log10(A/M) has mean alpha*mu1 + (1-alpha)*mu2.
-        let l = 0.5f32.log10();
-        let (kind, a) = (&SatKind::RocketBody, alpha(&SatKind::RocketBody, l));
-        let expected = a * mean_1(kind, l) + (1.0 - a) * mean_2(kind, l);
-        assert!((mean_log10_am(SatKind::RocketBody, 0.5) - expected).abs() < 0.05);
+    fn fragments_over_11cm_follow_the_bimodal_mixture() {
+        // Spacecraft at L_c = 1 m: modes at -0.95 and -2.0 (σ 0.3 each), α = 0.78. The mixture's spread includes the
+        // gap between the modes (σ ≈ 0.53); a weighted sum of two samples would give σ ≈ 0.24.
+        let (kind, l) = (SatKind::Spacecraft, 0.0);
+        let a = alpha(&kind, l);
+        let (m1, m2, s1, s2) = (mean_1(&kind, l), mean_2(&kind, l), sigma_1(&kind, l), sigma_2(&kind, l));
+        let mean = a * m1 + (1.0 - a) * m2;
+        let sd = (a * s1 * s1 + (1.0 - a) * s2 * s2 + a * (1.0 - a) * (m1 - m2).powi(2)).sqrt();
+        let (got_mean, got_sd) = log10_am_stats(kind, 1.0);
+        assert!((got_mean - mean).abs() < 0.02, "mean {got_mean} vs {mean}");
+        assert!((got_sd - sd).abs() < 0.02, "sd {got_sd} vs {sd}");
+    }
+
+    #[test]
+    fn rocket_body_sigma_2_is_continuous() {
+        let rb = &SatKind::RocketBody;
+        assert_eq!(sigma_2(rb, -1.5), 0.28);
+        assert!((sigma_2(rb, -0.5) - 0.1982).abs() < 1e-4);
+        assert!((sigma_2(rb, 0.0999) - 0.1).abs() < 1e-3);
+        assert_eq!(sigma_2(rb, 0.5), 0.1);
     }
 
     #[test]
     fn fragments_under_8cm_use_the_small_object_distribution() {
-        let expected = mean_soc(0.01f32.log10());
-        assert!((mean_log10_am(SatKind::RocketBody, 0.01) - expected).abs() < 0.05);
+        let (mean, sd) = log10_am_stats(SatKind::RocketBody, 0.01);
+        assert!((mean - mean_soc(-2.0)).abs() < 0.02);
+        assert!((sd - sigma_soc(-2.0)).abs() < 0.02);
     }
 }
